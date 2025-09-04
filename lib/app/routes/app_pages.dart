@@ -1,5 +1,7 @@
 import 'package:get/get.dart';
+import 'package:om_health_care_app/app/modules/auth/views/change_password.dart';
 import 'package:om_health_care_app/app/screens/add_doctor.dart';
+import 'package:om_health_care_app/app/screens/add_user.dart';
 import '../modules/auth/views/login_view.dart';
 import '../modules/auth/views/signup_view.dart';
 import '../modules/auth/bindings/auth_binding.dart';
@@ -14,5 +16,7 @@ class AppPages {
     GetPage(name: AppRoutes.dashboard, page: () => DashboardPage(),),
     GetPage(name: AppRoutes.profile, page: () => ProfilePage(),),
     GetPage(name: AppRoutes.addDoctor, page: () => AddDoctorPage(),),
+    GetPage(name: AppRoutes.addUser, page: () => AddUserPage(),),
+    GetPage(name: AppRoutes.changePassword, page: () => ChangePasswordView(),),
   ];
 }

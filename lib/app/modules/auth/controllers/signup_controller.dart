@@ -67,8 +67,9 @@ class SignupController extends GetxController {
     if (passwordController.text != confirmPasswordController.text) {
       Get.snackbar("Error", "Passwords do not match",
           snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red,
-          colorText: Colors.white);
+          // backgroundColor: Colors.red,
+          // colorText: Colors.white
+      );
       return;
     }
 
@@ -102,22 +103,25 @@ class SignupController extends GetxController {
       if (response.statusCode == 200 && (data["success"] == 1 || data["success"] == true)) {
         Get.snackbar("Success", data["msg"] ?? "Registered Successfully!",
             snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: Colors.green,
-            colorText: Colors.white);
+            // backgroundColor: Colors.green,
+            // colorText: Colors.white
+        );
 
         // After success → redirect to login
         Get.offAllNamed("/login");
       } else {
         Get.snackbar("Error", data["msg"] ?? "Something went wrong",
             snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: Colors.red,
-            colorText: Colors.white);
+            // backgroundColor: Colors.red,
+            // colorText: Colors.white
+        );
       }
     } catch (e) {
       Get.snackbar("Error", e.toString(),
           snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red,
-          colorText: Colors.white);
+          // backgroundColor: Colors.red,
+          // colorText: Colors.white
+      );
     }
   }
 }

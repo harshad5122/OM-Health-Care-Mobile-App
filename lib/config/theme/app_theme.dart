@@ -6,7 +6,7 @@ class AppColors {
   static const Color light = Color(0xFFF8F9FA);
   static const Color dark = Color(0xFF343A40);
   static const Color text = Color(0xFF495057);
-  static const Color border = Color(0xffebf6fb);
+  static const Color border = Color(0xfff3f3f3);
 }
 
 class AppTheme {

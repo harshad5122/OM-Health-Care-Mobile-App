@@ -63,7 +63,8 @@ class ProfileController extends GetxController {
 
       if (token == null) {
         Get.snackbar("Error", "No token found. Please login again.",
-            backgroundColor: Colors.red, colorText: Colors.white);
+            // backgroundColor: Colors.red, colorText: Colors.white
+        );
         return;
       }
 
@@ -98,11 +99,13 @@ class ProfileController extends GetxController {
         }
       } else {
         Get.snackbar("Error", data["msg"] ?? "Failed to load profile",
-            backgroundColor: Colors.red, colorText: Colors.white);
+            // backgroundColor: Colors.red, colorText: Colors.white
+        );
       }
     } catch (e) {
       Get.snackbar("Error", e.toString(),
-          backgroundColor: Colors.red, colorText: Colors.white);
+          // backgroundColor: Colors.red, colorText: Colors.white
+      );
     } finally {
       isLoading.value = false;
     }
@@ -116,7 +119,8 @@ class ProfileController extends GetxController {
 
       if (token == null) {
         Get.snackbar("Error", "No token found. Please login again.",
-            backgroundColor: Colors.red, colorText: Colors.white);
+            // backgroundColor: Colors.red, colorText: Colors.white
+        );
         return;
       }
 
@@ -149,18 +153,21 @@ class ProfileController extends GetxController {
 
       if (response.statusCode == 200 && (data["success"] == 1)) {
         Get.snackbar("Success", data["msg"] ?? "Profile updated successfully",
-            backgroundColor: Colors.green, colorText: Colors.white);
+            // backgroundColor: Colors.green, colorText: Colors.white
+        );
 
         // update local values
         isEditing.value = false;
         fetchUserProfile(); // refresh with updated data
       } else {
         Get.snackbar("Error", data["msg"] ?? "Update failed",
-            backgroundColor: Colors.red, colorText: Colors.white);
+            // backgroundColor: Colors.red, colorText: Colors.white
+        );
       }
     } catch (e) {
       Get.snackbar("Error", e.toString(),
-          backgroundColor: Colors.red, colorText: Colors.white);
+          // backgroundColor: Colors.red, colorText: Colors.white
+      );
     } finally {
       isLoading.value = false;
     }

@@ -1,5 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
+
+import '../../../global/tokenStorage.dart';
+import '../../../utils/api_constants.dart';
 
 class AddDoctorController extends GetxController {
   final formKey = GlobalKey<FormState>();
@@ -8,7 +14,8 @@ class AddDoctorController extends GetxController {
   final firstNameController = TextEditingController();
   final lastNameController = TextEditingController();
   final emailController = TextEditingController();
-  final countryCodeController = TextEditingController(text: "+91");
+  // final countryCodeController = TextEditingController(text: "+91");
+  final countryCode = "+91".obs;
   final phoneController = TextEditingController();
   final dob = Rxn<DateTime>();
   var selectedGender = "".obs;
@@ -124,25 +131,137 @@ class AddDoctorController extends GetxController {
     emergencyRelation.value = "";
     sameAsCurrent.value = false;
   }
+  //
+  // Future<void> saveDoctor() async{
+  //
+  //   if (!formKey.currentState!.validate()) return;
+  //
+  //   final doctorData = {
+  //     "firstname": firstNameController.text,
+  //     "lastname": lastNameController.text,
+  //     "email": emailController.text,
+  //     "countryCode": countryCode,
+  //     "phone": phoneController.text,
+  //     "dob": dob.value?.toIso8601String(),
+  //     "gender": selectedGender.value,
+  //     "qualification": qualificationController.text,
+  //     "specialization": selectedSpecialization.value,
+  //     "occupation": occupationController.text,
+  //     "professionalStatus": professionalStatus.value,
+  //     "workExperience": professionalStatus.value == "experienced"
+  //         ? {
+  //       "totalYears": int.tryParse(totalYearsController.text),
+  //       "lastHospital": lastHospitalController.text,
+  //       "position": positionController.text,
+  //       "workAddress": {
+  //         "hospitalName": workHospitalAddressController.text,
+  //         "city": workCity.value,
+  //         "state": workState.value,
+  //         "country": workCountry.value,
+  //         "pincode": workPincodeController.text,
+  //       },
+  //     }
+  //         : null,
+  //     "address": addressController.text,
+  //     "city": selectedCity.value,
+  //     "state": selectedState.value,
+  //     "country": selectedCountry.value,
+  //     "pincode": pincodeController.text,
+  //     "familyDetails": {
+  //       "father": {
+  //         "name": fatherNameController.text,
+  //         "contact": fatherContactController.text,
+  //         "occupation": fatherOccupationController.text,
+  //       },
+  //       "mother": {
+  //         "name": motherNameController.text,
+  //         "contact": motherContactController.text,
+  //         "occupation": motherOccupationController.text,
+  //       },
+  //       "permanentAddress": {
+  //         "line1": permAddressController.text,
+  //         "city": permCity.value,
+  //         "state": permState.value,
+  //         "country": permCountry.value,
+  //         "pincode": permPincodeController.text,
+  //       },
+  //       "sameAsPermanent": sameAsCurrent.value,
+  //       "emergencyContact": {
+  //         "name": emergencyNameController.text,
+  //         "relation": emergencyRelation.value,
+  //         "contact": emergencyContactController.text,
+  //       }
+  //     }
+  //   };
+  //
+  //   try {
+  //     final token = await TokenStorage.getToken();
+  //     Get.dialog(
+  //       const Center(child: CircularProgressIndicator()),
+  //       barrierDismissible: false,
+  //     );
+  //
+  //     final response = await http.post(
+  //       Uri.parse(ApiConstants.ADD_DOCTOR),
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         "Authorization": "Bearer $token",
+  //       },
+  //       body: jsonEncode(doctorData),
+  //     );
+  //
+  //     Get.back(); // close loading dialog
+  //
+  //     if (response.statusCode == 200) {
+  //       final data = jsonDecode(response.body);
+  //
+  //       if (data["success"] == 1) {
+  //         Get.snackbar("Success", data["msg"],
+  //             backgroundColor: Colors.green, colorText: Colors.white);
+  //
+  //         clearForm();
+  //       } else {
+  //         Get.snackbar("Error", data["msg"] ?? "Something went wrong",
+  //             backgroundColor: Colors.red.shade100,
+  //             colorText: Colors.red.shade900);
+  //       }
+  //     } else {
+  //       Get.snackbar("Error", "Failed with code ${response.statusCode}",
+  //           backgroundColor: Colors.red.shade100,
+  //           colorText: Colors.red.shade900);
+  //     }
+  //   } catch (e) {
+  //     Get.back();
+  //     Get.snackbar("Error", e.toString(),
+  //         backgroundColor: Colors.red.shade100, colorText: Colors.red.shade900);
+  //   }
+  //
+  //     print("Doctor Data => $doctorData");
+  //
+  //   // TODO: Call your API here with doctorData
+  //   Get.snackbar("Success", "Doctor saved successfully",
+  //       backgroundColor: Colors.green, colorText: Colors.white);
+  // }
 
-  void saveDoctor() {
+  void saveDoctor() async {
     if (!formKey.currentState!.validate()) return;
 
     final doctorData = {
       "firstname": firstNameController.text,
       "lastname": lastNameController.text,
       "email": emailController.text,
-      "countryCode": countryCodeController.text,
+      "countryCode": countryCode.value,
       "phone": phoneController.text,
-      "dob": dob.value?.toIso8601String(),
+      "dob": dob.value?.toIso8601String().split("T")[0], // yyyy-MM-dd
       "gender": selectedGender.value,
+      "role": 3, // fixed role for doctor
       "qualification": qualificationController.text,
       "specialization": selectedSpecialization.value,
       "occupation": occupationController.text,
       "professionalStatus": professionalStatus.value,
       "workExperience": professionalStatus.value == "experienced"
           ? {
-        "totalYears": int.tryParse(totalYearsController.text),
+        "totalYears": int.tryParse(totalYearsController.text) ?? 0,
         "lastHospital": lastHospitalController.text,
         "position": positionController.text,
         "workAddress": {
@@ -151,7 +270,7 @@ class AddDoctorController extends GetxController {
           "state": workState.value,
           "country": workCountry.value,
           "pincode": workPincodeController.text,
-        },
+        }
       }
           : null,
       "address": addressController.text,
@@ -186,10 +305,53 @@ class AddDoctorController extends GetxController {
       }
     };
 
-    print("Doctor Data => $doctorData");
+    try {
+      Get.dialog(
+        const Center(child: CircularProgressIndicator()),
+        barrierDismissible: false,
+      );
 
-    // TODO: Call your API here with doctorData
-    Get.snackbar("Success", "Doctor saved successfully",
-        backgroundColor: Colors.green, colorText: Colors.white);
+
+      final token = await TokenStorage.getToken();
+
+      final response = await http.post(
+        Uri.parse(ApiConstants.ADD_DOCTOR),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+        body: jsonEncode(doctorData),
+      );
+
+      Get.back(); // close loading dialog
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        if (data["success"] == 1) {
+          Get.snackbar("Success", data["msg"],
+              // backgroundColor: Colors.green, colorText: Colors.white
+          );
+
+          clearForm();
+        } else {
+          Get.snackbar("Error", data["msg"] ?? "Something went wrong",
+              // backgroundColor: Colors.red.shade100,
+              // colorText: Colors.red.shade900
+          );
+        }
+      } else {
+        Get.snackbar("Error", "Failed with code ${response.statusCode}",
+            // backgroundColor: Colors.red.shade100,
+            // colorText: Colors.red.shade900
+        );
+      }
+    } catch (e) {
+      Get.back();
+      Get.snackbar("Error", e.toString(),
+          // backgroundColor: Colors.red.shade100, colorText: Colors.red.shade900
+      );
+    }
   }
+
 }

@@ -75,18 +75,28 @@ class LoginController extends GetxController {
           Global.role = user["role"];
         }
         print('login user first name => ${Global.userFirstname}');
+        print('login addedByAdmin => ${user["addedByAdmin"]}');
 
 
         Get.snackbar("Success", data["msg"] ?? "Login successful",
-            backgroundColor: Colors.green, colorText: Colors.white);
-        Get.offAllNamed("/dashboard");
+          snackPosition: SnackPosition.BOTTOM,
+            // backgroundColor: Colors.green, colorText: Colors.white
+        );
+        if (user["addedByAdmin"] == true) {
+          Get.offAllNamed("/change-password");
+        } else {
+          Get.offAllNamed("/dashboard");
+        }
+        // Get.offAllNamed("/dashboard");
       } else {
         Get.snackbar("Error", data["msg"] ?? "Invalid credentials",
-            backgroundColor: Colors.red, colorText: Colors.white);
+            // backgroundColor: Colors.red, colorText: Colors.white
+        );
       }
     } catch (e) {
       Get.snackbar("Error", e.toString(),
-          backgroundColor: Colors.red, colorText: Colors.white);
+          // backgroundColor: Colors.red, colorText: Colors.white
+      );
     } finally {
       isLoading.value = false;
     }
@@ -118,14 +128,17 @@ class LoginController extends GetxController {
         isOtpSent.value = true;
         Get.snackbar("OTP Sent",
             "Verification code sent to ${phoneController.text.trim()}",
-            backgroundColor: Colors.green, colorText: Colors.white);
+            // backgroundColor: Colors.green, colorText: Colors.white
+        );
       } else {
         Get.snackbar("Error", data["msg"] ?? "Failed to send OTP",
-            backgroundColor: Colors.red, colorText: Colors.white);
+            // backgroundColor: Colors.red, colorText: Colors.white
+        );
       }
     } catch (e) {
       Get.snackbar("Error", e.toString(),
-          backgroundColor: Colors.red, colorText: Colors.white);
+          // backgroundColor: Colors.red, colorText: Colors.white
+      );
     } finally {
       isLoading.value = false;
     }
@@ -174,15 +187,19 @@ class LoginController extends GetxController {
         }
 
         Get.snackbar("Success", data["msg"] ?? "Login successful",
-            backgroundColor: Colors.green, colorText: Colors.white);
+          snackPosition: SnackPosition.BOTTOM,
+            // backgroundColor: Colors.green, colorText: Colors.white
+        );
         Get.offAllNamed("/dashboard");
       } else {
         Get.snackbar("Error", data["msg"] ?? "Invalid OTP",
-            backgroundColor: Colors.red, colorText: Colors.white);
+            // backgroundColor: Colors.red, colorText: Colors.white
+        );
       }
     } catch (e) {
       Get.snackbar("Error", e.toString(),
-          backgroundColor: Colors.red, colorText: Colors.white);
+          // backgroundColor: Colors.red, colorText: Colors.white
+      );
     } finally {
       isLoading.value = false;
     }

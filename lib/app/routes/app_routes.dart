@@ -4,4 +4,6 @@ abstract class AppRoutes {
   static const dashboard = '/dashboard';
   static const profile = '/profile';
   static const addDoctor = '/addDoctor';
+  static const addUser = '/addUser';
+  static const changePassword = '/change-password';
 }

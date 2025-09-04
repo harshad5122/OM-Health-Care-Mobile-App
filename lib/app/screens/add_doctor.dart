@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../modules/staff/controller/add_doctor_controller.dart';
+import '../widgets/phone_field.dart';
 import '../widgets/textfield.dart';
 import '../widgets/dropdown.dart';
 
@@ -61,26 +62,41 @@ class AddDoctorPage extends StatelessWidget {
                     controller: controller.emailController,
                     keyboardType: TextInputType.emailAddress),
                 const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: CustomTextField(
-                          label: "Country Code*",
-                          hint: "+91",
-                          controller: controller.countryCodeController),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      flex: 5,
-                      child: CustomTextField(
-                          label: "Phone Number*",
-                          hint: "Enter phone number",
-                          controller: controller.phoneController,
-                          keyboardType: TextInputType.phone),
-                    ),
-                  ],
+
+                PhoneField(
+                  label: "Mobile Number",
+                  countryCode: controller.countryCode,
+                  phoneController: controller.phoneController,
+                  validator: (val) =>
+                  val!.isEmpty ? "Mobile number is required" : null,
                 ),
+                const SizedBox(height: 12),
+                Obx(() {
+                  return GestureDetector(
+                    onTap: () async {
+                      DateTime? picked = await showDatePicker(
+                        context: context,
+                        initialDate: controller.dob.value ??
+                            DateTime(2000, 1, 1),
+                        firstDate: DateTime(1900),
+                        lastDate: DateTime.now(),
+                      );
+                      if (picked != null) {
+                        controller.dob.value = picked;
+                      }
+                    },
+                    child: AbsorbPointer(
+                      child: CustomTextField(
+                        label: "Date of Birth",
+                        hint: controller.dob.value == null
+                            ? "Select date of birth"
+                            : "${controller.dob.value!.day}-${controller.dob.value!.month}-${controller.dob.value!.year}",
+                        controller: TextEditingController(),
+                        prefixIcon: Icons.calendar_today,
+                      ),
+                    ),
+                  );
+                }),
                 const SizedBox(height: 12),
                 Obx(() => CustomDropdown(
                   label: "Gender*",
@@ -116,30 +132,49 @@ class AddDoctorPage extends StatelessWidget {
                     hint: "Enter occupation",
                     controller: controller.occupationController),
                 const SizedBox(height: 12),
-                Obx(() => Row(
+
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: RadioListTile(
-                        title: const Text("Fresher"),
-                        value: "fresher",
-                        groupValue: controller.professionalStatus.value,
-                        onChanged: (val) =>
-                        controller.professionalStatus.value =
-                            val.toString(),
+                    const Text(
+                      "Professional Status*",
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
                       ),
                     ),
-                    Expanded(
-                      child: RadioListTile(
-                        title: const Text("Experienced"),
-                        value: "experienced",
-                        groupValue: controller.professionalStatus.value,
-                        onChanged: (val) =>
-                        controller.professionalStatus.value =
-                            val.toString(),
-                      ),
-                    ),
+                    // const SizedBox(height: 6),
+                    Obx(() => Row(
+                      children: [
+                        Expanded(
+                          child: RadioListTile(
+                            contentPadding: EdgeInsets.zero, // remove horizontal padding
+                            title: const Text("Fresher"),
+                            value: "fresher",
+                            dense: true, // reduce height
+                            visualDensity: VisualDensity.compact, // tighten spacing
+                            groupValue: controller.professionalStatus.value,
+                            onChanged: (val) =>
+                            controller.professionalStatus.value = val.toString(),
+                          ),
+                        ),
+                        Expanded(
+                          child: RadioListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: const Text("Experienced"),
+                            value: "experienced",
+                            dense: true,
+                            visualDensity: VisualDensity.compact,
+                            groupValue: controller.professionalStatus.value,
+                            onChanged: (val) =>
+                            controller.professionalStatus.value = val.toString(),
+                          ),
+                        ),
+                      ],
+                    )),
                   ],
-                )),
+                )
+
               ]),
 
               // Work Experience (only if experienced)
@@ -276,6 +311,34 @@ class AddDoctorPage extends StatelessWidget {
                     hint: "Enter contact",
                     controller: controller.fatherContactController,
                     keyboardType: TextInputType.phone),
+                const SizedBox(height: 12),
+                CustomTextField(
+                  label: "Father’s Occupation*",
+                  hint: "Enter father’s occupation",
+                  controller: controller.fatherOccupationController,
+                ),
+                const SizedBox(height: 12),
+
+                CustomTextField(
+                  label: "Mother’s Name*",
+                  hint: "Enter mother’s name",
+                  controller: controller.motherNameController,
+                ),
+                const SizedBox(height: 12),
+
+                CustomTextField(
+                  label: "Mother’s Contact*",
+                  hint: "Enter contact",
+                  controller: controller.motherContactController,
+                  keyboardType: TextInputType.phone,
+                ),
+                const SizedBox(height: 12),
+
+                CustomTextField(
+                  label: "Mother’s Occupation*",
+                  hint: "Enter mother’s occupation",
+                  controller: controller.motherOccupationController,
+                ),
               ]),
 
               // Permanent Address
@@ -292,7 +355,17 @@ class AddDoctorPage extends StatelessWidget {
                       hint: "Enter address",
                       controller: controller.permAddressController),
                   const SizedBox(height: 12),
-                  CustomDropdown(
+                  // CustomDropdown(
+                  //   label: "Country*",
+                  //   value: controller.permCountry.value.isEmpty
+                  //       ? null
+                  //       : controller.permCountry.value,
+                  //   items: controller.countries,
+                  //   onChanged: (val) =>
+                  //   controller.permCountry.value = val ?? "",
+                  // ),
+
+                  Obx(() => CustomDropdown(
                     label: "Country*",
                     value: controller.permCountry.value.isEmpty
                         ? null
@@ -300,9 +373,23 @@ class AddDoctorPage extends StatelessWidget {
                     items: controller.countries,
                     onChanged: (val) =>
                     controller.permCountry.value = val ?? "",
-                  ),
+                  )),
                   const SizedBox(height: 12),
-                  CustomDropdown(
+                  // CustomDropdown(
+                  //   label: "State*",
+                  //   value: controller.permState.value.isEmpty
+                  //       ? null
+                  //       : controller.permState.value,
+                  //   items: controller.states[
+                  //   controller.permCountry.value.isEmpty
+                  //       ? "India"
+                  //       : controller.permCountry.value] ??
+                  //       [],
+                  //   onChanged: (val) =>
+                  //   controller.permState.value = val ?? "",
+                  // ),
+
+                  Obx(() => CustomDropdown(
                     label: "State*",
                     value: controller.permState.value.isEmpty
                         ? null
@@ -314,9 +401,22 @@ class AddDoctorPage extends StatelessWidget {
                         [],
                     onChanged: (val) =>
                     controller.permState.value = val ?? "",
-                  ),
+                  )),
                   const SizedBox(height: 12),
-                  CustomDropdown(
+                  // CustomDropdown(
+                  //   label: "City*",
+                  //   value: controller.permCity.value.isEmpty
+                  //       ? null
+                  //       : controller.permCity.value,
+                  //   items: controller.cities[
+                  //   controller.permState.value.isEmpty
+                  //       ? "Gujarat"
+                  //       : controller.permState.value] ??
+                  //       [],
+                  //   onChanged: (val) =>
+                  //   controller.permCity.value = val ?? "",
+                  // ),
+                  Obx(() => CustomDropdown(
                     label: "City*",
                     value: controller.permCity.value.isEmpty
                         ? null
@@ -328,7 +428,7 @@ class AddDoctorPage extends StatelessWidget {
                         [],
                     onChanged: (val) =>
                     controller.permCity.value = val ?? "",
-                  ),
+                  )),
                   const SizedBox(height: 12),
                   CustomTextField(
                       label: "Pincode*",
@@ -363,24 +463,74 @@ class AddDoctorPage extends StatelessWidget {
               ]),
 
               const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                      child: ElevatedButton(
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14.0),
+                child: Row(
+                  children: [
+                    // Clear Button
+                    Expanded(
+                      child: OutlinedButton(
                         onPressed: controller.clearForm,
-                        style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.grey.shade400),
-                        child: const Text("Clear"),
-                      )),
-                  const SizedBox(width: 12),
-                  Expanded(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.grey.shade700,
+                          side: BorderSide(color: Colors.grey.shade400, width: 1.5),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          "Clear",
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+
+                    // Save Doctor Button
+                    Expanded(
                       child: ElevatedButton(
                         onPressed: controller.saveDoctor,
-                        child: const Text("Save Doctor"),
-                      )),
-                ],
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          backgroundColor: Colors.transparent, // for gradient
+                          shadowColor: Colors.transparent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ).merge(
+                          ButtonStyle(
+                            // Add gradient background
+                            backgroundColor: WidgetStateProperty.all(Colors.transparent),
+                            elevation: WidgetStateProperty.all(0),
+                            overlayColor: WidgetStateProperty.all(Colors.white.withOpacity(0.1)),
+                          ),
+                        ),
+                        child: Ink(
+                          decoration: BoxDecoration(
+                            color: Get.theme.primaryColor,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Container(
+                            alignment: Alignment.center,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            child: const Text(
+                              "Save Doctor",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 20),
+
+              // const SizedBox(height: 20),
             ],
           ),
         ),
