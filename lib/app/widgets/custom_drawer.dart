@@ -1,17 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../global/global.dart';
 import '../routes/app_routes.dart';
 
 class CustomDrawer extends StatelessWidget {
-  final String firstName;
-  final String lastName;
 
-  const CustomDrawer({
-    super.key,
-    required this.firstName,
-    required this.lastName,
-  });
+  const CustomDrawer({super.key,});
 
   @override
   Widget build(BuildContext context) {
@@ -30,14 +25,14 @@ class CustomDrawer extends StatelessWidget {
               color: Get.theme.primaryColor,
             ),
             accountName: Text(
-              "$firstName $lastName",
+              "${Global.userFirstname} ${Global.userLastname}",
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
             accountEmail: const Text(""), // optional (can show email here)
             currentAccountPicture: CircleAvatar(
               backgroundColor: Colors.white,
               child: Text(
-                firstName[0] + lastName[0],
+                "${Global.userFirstname?[0]}${Global.userLastname?[0]}",
                 style: TextStyle(
                   fontSize: 24,
                   color: Get.theme.primaryColor,
@@ -53,9 +48,23 @@ class CustomDrawer extends StatelessWidget {
           }),
           _buildMenuItem(Icons.person, "Profile", () {Get.toNamed(AppRoutes.profile);}),
           _buildMenuItem(Icons.message, "Messages", () {}),
-          _buildMenuItem(Icons.local_hospital, "Add Doctor", () {}),
+          _buildMenuItem(Icons.local_hospital, "Add Doctor", () {Get.toNamed(AppRoutes.addDoctor);}),
           _buildMenuItem(Icons.group_add, "Add User", () {}),
           _buildMenuItem(Icons.people, "Member", () {}),
+
+          const Spacer(),
+
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12.0),
+            child: _buildMenuItem(
+              Icons.logout,
+              "Logout",
+                  () {
+                // Add your logout logic here
+                Get.offAllNamed(AppRoutes.login);
+              },
+            ),
+          ),
         ],
       ),
     );

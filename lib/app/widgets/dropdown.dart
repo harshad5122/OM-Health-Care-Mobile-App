@@ -38,7 +38,8 @@ class CustomDropdown extends StatelessWidget {
 
         DropdownButtonFormField<String>(
           isExpanded: true,
-          value: value?.isEmpty == true ? null : value,
+          // value: value?.isEmpty == true ? null : value,
+          value: (value != null && items.contains(value)) ? value : null,
           decoration: InputDecoration(
             border: inputBorder,
             enabledBorder: inputBorder,

@@ -13,6 +13,157 @@ class LoginView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return Obx(() {
+        return Stack(
+          children: [
+            _buildLoginContent(),
+            if (controller.isLoading.value)
+              const Center(child: CircularProgressIndicator()),
+            // Scaffold(
+            //   backgroundColor: Get.theme.scaffoldBackgroundColor,
+            //   body: Center(
+            //     child: SingleChildScrollView(
+            //       child: Container(
+            //         margin: const EdgeInsets.all(20),
+            //         padding: const EdgeInsets.all(20),
+            //         decoration: BoxDecoration(
+            //           color: Get.theme.cardColor,
+            //           borderRadius: BorderRadius.circular(12),
+            //           boxShadow: [
+            //             BoxShadow(
+            //               color: Colors.black.withOpacity(0.05),
+            //               blurRadius: 10,
+            //               spreadRadius: 2,
+            //             )
+            //           ],
+            //         ),
+            //         child: Column(
+            //           mainAxisSize: MainAxisSize.min,
+            //           children: [
+            //             Text(
+            //               "Access Your Account",
+            //               style: Get.textTheme.titleLarge?.copyWith(
+            //                 color: Get.theme.primaryColor,
+            //                 fontWeight: FontWeight.bold,
+            //               ),
+            //             ),
+            //             const SizedBox(height: 8),
+            //             Text(
+            //               "Please select your preferred login method.",
+            //               style: Get.textTheme.bodyMedium?.copyWith(
+            //                 color: Get.theme.hintColor,
+            //               ),
+            //               textAlign: TextAlign.center,
+            //             ),
+            //             const SizedBox(height: 20),
+            //
+            //             Obx(() => Container(
+            //               decoration: BoxDecoration(
+            //                 borderRadius: BorderRadius.circular(10),
+            //               ),
+            //               child: ToggleButtons(
+            //                 isSelected: [
+            //                   controller.isPhoneLogin.value,
+            //                   !controller.isPhoneLogin.value,
+            //                 ],
+            //                 borderRadius: BorderRadius.circular(10),
+            //                 renderBorder: false, // remove extra borders
+            //                 fillColor: Get.theme.primaryColor, // selected button background
+            //                 selectedColor: Colors.white, // selected text color
+            //                 color: Colors.black, // unselected text color
+            //                 constraints: const BoxConstraints(minHeight: 45, minWidth: 120),
+            //                 onPressed: (index) {
+            //                   controller.toggleLoginMethod(index == 0);
+            //                 },
+            //                 children: [
+            //                   Container(
+            //                     decoration: BoxDecoration(
+            //                       color: controller.isPhoneLogin.value
+            //                           ? Get.theme.primaryColor
+            //                           : Get.theme.colorScheme.onPrimaryContainer,
+            //                       // borderRadius: BorderRadius.circular(10),
+            //                     ),
+            //                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            //                     alignment: Alignment.center,
+            //                     child: Text(
+            //                       "Login with Phone",
+            //                       style: TextStyle(
+            //                         color: controller.isPhoneLogin.value ? Colors.white : Colors.black,
+            //                       ),
+            //                     ),
+            //                   ),
+            //                   Container(
+            //                     decoration: BoxDecoration(
+            //                       color: !controller.isPhoneLogin.value
+            //                           ? Get.theme.primaryColor
+            //                           : Get.theme.colorScheme.onPrimaryContainer,
+            //                       // borderRadius: BorderRadius.circular(10),
+            //                     ),
+            //                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            //                     alignment: Alignment.center,
+            //                     child: Text(
+            //                       "Login with Email",
+            //                       style: TextStyle(
+            //                         color: !controller.isPhoneLogin.value ? Colors.white : Colors.black,
+            //                       ),
+            //                     ),
+            //                   ),
+            //                 ],
+            //               ),
+            //             )),
+            //
+            //             const SizedBox(height: 20),
+            //
+            //             // Phone Login Flow
+            //             Obx(() {
+            //               if (controller.isPhoneLogin.value) {
+            //                 return controller.isOtpSent.value
+            //                     ? _otpForm()
+            //                     : _phoneForm();
+            //               } else {
+            //                 return _emailForm();
+            //               }
+            //             }),
+            //
+            //             const SizedBox(height: 20),
+            //
+            //             // Footer
+            //             Obx(() => controller.isPhoneLogin.value
+            //                 ? const SizedBox()
+            //                 : TextButton(
+            //               onPressed: () => Get.toNamed("/forgot-password"),
+            //               child: const Text("Forgot Password?"),
+            //             )),
+            //             const SizedBox(height: 10),
+            //             Row(
+            //               mainAxisAlignment: MainAxisAlignment.center,
+            //               children: [
+            //                 const Text("Don’t have an account? "),
+            //                 GestureDetector(
+            //                   onTap: () => Get.toNamed("/signup"),
+            //                   child: Text(
+            //                     "Register Now",
+            //                     style: TextStyle(
+            //                       color: Get.theme.primaryColor,
+            //                       fontWeight: FontWeight.bold,
+            //                     ),
+            //                   ),
+            //                 )
+            //               ],
+            //             ),
+            //           ],
+            //         ),
+            //       ),
+            //     ),
+            //   ),
+            // ),
+          ],
+        );
+      }
+    );
+  }
+
+  Widget _buildLoginContent() {
     return Scaffold(
       backgroundColor: Get.theme.scaffoldBackgroundColor,
       body: Center(

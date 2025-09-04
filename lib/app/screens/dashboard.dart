@@ -18,10 +18,7 @@ class DashboardPage extends StatelessWidget {
           ),
         ),
       ),
-      drawer: const CustomDrawer(
-        firstName: "Ishita",
-        lastName: "Poshiya",
-      ),
+      drawer: const CustomDrawer(),
       body: const Center(
         child: Text(
           "Welcome to Dashboard!",

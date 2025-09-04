@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:om_health_care_app/app/screens/add_doctor.dart';
 import '../modules/auth/views/login_view.dart';
 import '../modules/auth/views/signup_view.dart';
 import '../modules/auth/bindings/auth_binding.dart';
@@ -12,5 +13,6 @@ class AppPages {
     GetPage(name: AppRoutes.signup, page: () => SignupView(),),
     GetPage(name: AppRoutes.dashboard, page: () => DashboardPage(),),
     GetPage(name: AppRoutes.profile, page: () => ProfilePage(),),
+    GetPage(name: AppRoutes.addDoctor, page: () => AddDoctorPage(),),
   ];
 }
