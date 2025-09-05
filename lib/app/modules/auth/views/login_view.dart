@@ -219,7 +219,7 @@ class LoginView extends StatelessWidget {
           Align(
             alignment: Alignment.centerRight,
             child: TextButton(
-              onPressed: controller.sendOtp,
+              onPressed: controller.resendOtp,
               child: const Text("Resend OTP"),
             ),
           ),

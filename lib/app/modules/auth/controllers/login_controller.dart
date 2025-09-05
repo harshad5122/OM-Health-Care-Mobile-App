@@ -82,7 +82,7 @@ class LoginController extends GetxController {
           snackPosition: SnackPosition.BOTTOM,
             // backgroundColor: Colors.green, colorText: Colors.white
         );
-        if (user["addedByAdmin"] == true) {
+        if (user["addedByAdmin"] == true && user["isPasswordChanged"] == true) {
           Get.offAllNamed("/change-password");
         } else {
           Get.offAllNamed("/dashboard");
@@ -102,9 +102,17 @@ class LoginController extends GetxController {
     }
   }
 
+  Future<void> resendOtp() async {
+    if (phoneController.text.trim().isEmpty) {
+      Get.snackbar("Error", "Phone number is missing");
+      return;
+    }
+    await sendOtp();
+  }
+
   /// SEND OTP (phone login step 1)
   Future<void> sendOtp() async {
-    if (!phoneFormKey.currentState!.validate()) return;
+    // if (!phoneFormKey.currentState!.validate()) return;
 
     isLoading.value = true;
     try {
@@ -127,7 +135,7 @@ class LoginController extends GetxController {
           (data["success"] == 1 || data["success"] == true)) {
         isOtpSent.value = true;
         Get.snackbar("OTP Sent",
-            "Verification code sent to ${phoneController.text.trim()}",
+          data["body"] ?? "OTP sent successfully",
             // backgroundColor: Colors.green, colorText: Colors.white
         );
       } else {
@@ -151,14 +159,14 @@ class LoginController extends GetxController {
     isLoading.value = true;
     try {
       final body = {
-        "loginType": "phone",
+        // "loginType": "phone",
         "countryCode": countryCode.value,
         "phone": phoneController.text.trim(),
         "otp": otpController.text.trim(),
       };
 
       final response = await http.post(
-        Uri.parse(ApiConstants.SIGNIN),
+        Uri.parse(ApiConstants.VERIFY_OTP),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode(body),
       );
