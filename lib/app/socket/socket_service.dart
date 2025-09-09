@@ -11,7 +11,7 @@ class SocketService extends GetxService {
   final RxBool isConnected = false.obs;
 
   Future<void> connectSocket(String userId) async {
-    socket = IO.io('https://28f4-2405-f600-8-fa43-7c5f-7c64-d94e-5262.ngrok-free.app', <String, dynamic>{
+    socket = IO.io('https://6aac4d15f067.ngrok-free.app', <String, dynamic>{
       'transports': ['websocket'],
       'autoConnect': false,
     });
@@ -83,11 +83,10 @@ class SocketService extends GetxService {
   //   socket?.emit('chat_message', messageData);
   // }
 
-  void emitMessageSeen(String messageId, String userId, bool isGroup) {
+  void emitMessageSeen(String messageId, String userId) {
     socket?.emit('message_seen', {
       'messageId': messageId,
       'user_id': userId,
-      'isGroup': isGroup,
     });
   }
 

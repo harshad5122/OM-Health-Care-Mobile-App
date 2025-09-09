@@ -18,7 +18,7 @@ class UploadFileController extends GetxController {
       String? token = await TokenStorage.getToken();
 
       var request = http.MultipartRequest('POST', Uri.parse(ApiConstants.UPLOAD_FILE));
-      request.headers['Authorization'] = '$token';
+      request.headers['Authorization'] = 'Bearer $token';
       request.headers['Content-Type'] = 'multipart/form-data';
 
       var fileMimeType = lookupMimeType(file.path) ?? 'application/octet-stream';
