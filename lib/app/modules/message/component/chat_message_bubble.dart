@@ -646,8 +646,6 @@
 //   }
 // }
 
-
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -681,6 +679,7 @@ class _ChatBubbleState extends State<ChatBubble> {
 
   final ChatController controller = Get.put(ChatController());
   final DownloadController downloadController = Get.put(DownloadController());
+
   // No longer need textFocusNode here, it's handled in ChatInputField
   // final textFocusNode = FocusNode();
 
@@ -737,8 +736,7 @@ class _ChatBubbleState extends State<ChatBubble> {
           }
         },
         // iconOnRightSwipe: !widget.isMe ? Icons.reply : null,
-        iconOnRightSwipe: !widget.isMe ? Icons.reply : Icons
-            .arrow_forward_ios,
+        iconOnRightSwipe: !widget.isMe ? Icons.reply : Icons.arrow_forward_ios,
         // iconOnLeftSwipe: widget.isMe ? Icons.reply : null,
         iconOnLeftSwipe: widget.isMe ? Icons.reply : Icons.arrow_back_ios,
         rightSwipeWidget: SizedBox.shrink(),
@@ -748,10 +746,12 @@ class _ChatBubbleState extends State<ChatBubble> {
             _showEditDeleteOptions(context);
           },
           child: Align(
-            alignment: widget.isMe ? Alignment.centerRight : Alignment.centerLeft,
+            alignment:
+                widget.isMe ? Alignment.centerRight : Alignment.centerLeft,
             child: ConstrainedBox(
               constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width * 0.75, // Max 75% width
+                maxWidth:
+                    MediaQuery.of(context).size.width * 0.75, // Max 75% width
               ),
               child: IntrinsicWidth(
                 child: Container(
@@ -761,15 +761,24 @@ class _ChatBubbleState extends State<ChatBubble> {
                   //   left: widget.isMe ? 80 : 10,
                   //   right: widget.isMe ? 10 : 80,
                   // ),
-                  margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  margin:
+                      const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   decoration: BoxDecoration(
-                    color: widget.isMe ? const Color(0xFFDCF8C6) : Colors.white, // WhatsApp green for sent, white for received
+                    color: widget.isMe ? const Color(0xFFDCF8C6) : Colors.white,
+                    // WhatsApp green for sent, white for received
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(12),
                       topRight: const Radius.circular(12),
-                      bottomLeft: widget.isMe ? const Radius.circular(12) : const Radius.circular(4), // Slightly different for corner
-                      bottomRight: widget.isMe ? const Radius.circular(4) : const Radius.circular(12), // Slightly different for corner
+                      bottomLeft: widget.isMe
+                          ? const Radius.circular(12)
+                          : const Radius.circular(4),
+                      // Slightly different for corner
+                      bottomRight: widget.isMe
+                          ? const Radius.circular(4)
+                          : const Radius.circular(
+                              12), // Slightly different for corner
                     ),
                     boxShadow: [
                       BoxShadow(
@@ -790,9 +799,17 @@ class _ChatBubbleState extends State<ChatBubble> {
                           padding: const EdgeInsets.all(8),
                           margin: const EdgeInsets.only(bottom: 5),
                           decoration: BoxDecoration(
-                            color: widget.isMe ? const Color(0xFFD0F5B4) : Colors.grey.shade200, // Lighter shade for reply background
+                            color: widget.isMe
+                                ? const Color(0xFFD0F5B4)
+                                : Colors.grey.shade200,
+                            // Lighter shade for reply background
                             borderRadius: BorderRadius.circular(8),
-                            border: Border(left: BorderSide(color: widget.isMe ? Colors.green.shade700 : Colors.blue.shade700, width: 4)), // Accent border
+                            border: Border(
+                                left: BorderSide(
+                                    color: widget.isMe
+                                        ? Colors.green.shade700
+                                        : Colors.blue.shade700,
+                                    width: 4)), // Accent border
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -814,18 +831,22 @@ class _ChatBubbleState extends State<ChatBubble> {
                               Text(
                                 replyTo.senderId == Global.userId
                                     ? 'You'
-                                    : (replyTo.senderDetails != null && replyTo.senderDetails!.isNotEmpty
-                                    ? replyTo.senderDetails!.first.firstname
-                                    : 'Unknown'),
+                                    : (replyTo.senderDetails != null &&
+                                            replyTo.senderDetails!.isNotEmpty
+                                        ? replyTo.senderDetails!.first.firstname
+                                        : 'Unknown'),
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  color: widget.isMe ? Colors.green.shade700 : Colors.blue.shade700,
+                                  color: widget.isMe
+                                      ? Colors.green.shade700
+                                      : Colors.blue.shade700,
                                 ),
                               ),
 
                               const SizedBox(height: 2),
                               // Display replied content
-                              if (replyTo.message != null && replyTo.messageType == 'text')
+                              if (replyTo.message != null &&
+                                  replyTo.messageType == 'text')
                                 Text(
                                   replyTo.message!,
                                   maxLines: 2,
@@ -833,71 +854,94 @@ class _ChatBubbleState extends State<ChatBubble> {
                                   style: const TextStyle(color: Colors.black87),
                                 ),
                               // Handle other media types in reply preview
-                              if (replyTo.messageType == 'image' && replyTo.attachmentDetails != null && replyTo.attachmentDetails!.isNotEmpty)
+                              if (replyTo.messageType == 'image' &&
+                                  replyTo.attachmentDetails != null &&
+                                  replyTo.attachmentDetails!.isNotEmpty)
                                 Row(
                                   children: [
-                                    Icon(Icons.image, size: 16, color: Colors.grey[600]),
+                                    Icon(Icons.image,
+                                        size: 16, color: Colors.grey[600]),
                                     const SizedBox(width: 4),
                                     Expanded(
                                       child: Text(
-                                        replyTo.attachmentDetails!.first.name ?? 'Image',
-                                        style: TextStyle(color: Colors.grey[600]),
+                                        replyTo.attachmentDetails!.first.name ??
+                                            'Image',
+                                        style:
+                                            TextStyle(color: Colors.grey[600]),
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
                                   ],
                                 ),
-                              if (replyTo.messageType == 'video' && replyTo.attachmentDetails != null && replyTo.attachmentDetails!.isNotEmpty)
+                              if (replyTo.messageType == 'video' &&
+                                  replyTo.attachmentDetails != null &&
+                                  replyTo.attachmentDetails!.isNotEmpty)
                                 Row(
                                   children: [
-                                    Icon(Icons.videocam, size: 16, color: Colors.grey[600]),
+                                    Icon(Icons.videocam,
+                                        size: 16, color: Colors.grey[600]),
                                     const SizedBox(width: 4),
                                     Expanded(
                                       child: Text(
-                                        replyTo.attachmentDetails!.first.name ?? 'Video',
-                                        style: TextStyle(color: Colors.grey[600]),
+                                        replyTo.attachmentDetails!.first.name ??
+                                            'Video',
+                                        style:
+                                            TextStyle(color: Colors.grey[600]),
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
                                   ],
                                 ),
-                              if (replyTo.messageType == 'audio' && replyTo.attachmentDetails != null && replyTo.attachmentDetails!.isNotEmpty)
+                              if (replyTo.messageType == 'audio' &&
+                                  replyTo.attachmentDetails != null &&
+                                  replyTo.attachmentDetails!.isNotEmpty)
                                 Row(
                                   children: [
-                                    Icon(Icons.audiotrack, size: 16, color: Colors.grey[600]),
+                                    Icon(Icons.audiotrack,
+                                        size: 16, color: Colors.grey[600]),
                                     const SizedBox(width: 4),
                                     Expanded(
                                       child: Text(
-                                        replyTo.attachmentDetails!.first.name ?? 'Audio',
-                                        style: TextStyle(color: Colors.grey[600]),
+                                        replyTo.attachmentDetails!.first.name ??
+                                            'Audio',
+                                        style:
+                                            TextStyle(color: Colors.grey[600]),
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
                                   ],
                                 ),
-                              if (replyTo.messageType == 'document' && replyTo.attachmentDetails != null && replyTo.attachmentDetails!.isNotEmpty)
+                              if (replyTo.messageType == 'document' &&
+                                  replyTo.attachmentDetails != null &&
+                                  replyTo.attachmentDetails!.isNotEmpty)
                                 Row(
                                   children: [
-                                    Icon(Icons.insert_drive_file, size: 16, color: Colors.grey[600]),
+                                    Icon(Icons.insert_drive_file,
+                                        size: 16, color: Colors.grey[600]),
                                     const SizedBox(width: 4),
                                     Expanded(
                                       child: Text(
-                                        replyTo.attachmentDetails!.first.name ?? 'Document',
-                                        style: TextStyle(color: Colors.grey[600]),
+                                        replyTo.attachmentDetails!.first.name ??
+                                            'Document',
+                                        style:
+                                            TextStyle(color: Colors.grey[600]),
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
                                   ],
                                 ),
-                              if (replyTo.messageType == 'location' && replyTo.latitude != null)
+                              if (replyTo.messageType == 'location' &&
+                                  replyTo.latitude != null)
                                 Row(
                                   children: [
-                                    Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
+                                    Icon(Icons.location_on,
+                                        size: 16, color: Colors.grey[600]),
                                     const SizedBox(width: 4),
                                     Expanded(
                                       child: Text(
                                         'Location Shared',
-                                        style: TextStyle(color: Colors.grey[600]),
+                                        style:
+                                            TextStyle(color: Colors.grey[600]),
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
@@ -908,97 +952,182 @@ class _ChatBubbleState extends State<ChatBubble> {
                         ),
 
                       // Main message content
-                      if (messageType == "image" && attachmentDetails != null && attachmentDetails.isNotEmpty) ...[
+                      if (messageType == "image" &&
+                          attachmentDetails != null &&
+                          attachmentDetails.isNotEmpty) ...[
                         for (var file in attachmentDetails)
                           if (file.url != null)
-                            GestureDetector(
-                              onTap: () {
-                                Get.to(() => FullScreenImage(imageUrl: file.url!));
-                              },
-                              child: Stack(
-                                children: [
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Image.network(
-                                      file.url!,
-                                      width: 200,
-                                      height: 200,
-                                      fit: BoxFit.cover,
-                                    ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                GestureDetector(
+                                  onTap: () {
+                                    Get.to(() =>
+                                        FullScreenImage(imageUrl: file.url!));
+                                  },
+                                  child: Stack(
+                                    children: [
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: Image.network(
+                                          file.url!,
+                                          width: 200,
+                                          height: 200,
+                                          fit: BoxFit.cover,
+                                        ),
+                                      ),
+                                      // Positioned(
+                                      //   bottom: 0,
+                                      //   right: 0,
+                                      //   child: Row(
+                                      //     children: [
+                                      //       Text(formattedTime,
+                                      //           style: TextStyle(fontSize: 10, color: Colors.white, shadows: [Shadow(color: Colors.black, blurRadius: 2)])),
+                                      //       const SizedBox(width: 4),
+                                      //       if (widget.isMe)
+                                      //         Icon(
+                                      //           status == 'seen' ? Icons.done_all : Icons.done,
+                                      //           size: 16,
+                                      //           color: status == 'seen' ? Colors.blue : Colors.white,
+                                      //         ),
+                                      //     ],
+                                      //   ),
+                                      // ),
+                                    ],
                                   ),
-                                  Positioned(
-                                    bottom: 0,
-                                    right: 0,
+                                ),
+                                const SizedBox(height: 4),
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 6, vertical: 0),
                                     child: Row(
+                                      mainAxisSize: MainAxisSize.min,
                                       children: [
                                         Text(formattedTime,
-                                            style: TextStyle(fontSize: 10, color: Colors.white, shadows: [Shadow(color: Colors.black, blurRadius: 2)])),
+                                            style: TextStyle(
+                                                fontSize: 10,
+                                                color: Colors.black87)),
                                         const SizedBox(width: 4),
                                         if (widget.isMe)
                                           Icon(
-                                            status == 'seen' ? Icons.done_all : Icons.done,
+                                            status == 'seen'
+                                                ? Icons.done_all
+                                                : Icons.done,
                                             size: 16,
-                                            color: status == 'seen' ? Colors.blue : Colors.white,
+                                            color: status == 'seen'
+                                                ? Colors.blue
+                                                : Colors.black54,
                                           ),
                                       ],
                                     ),
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
-                        const SizedBox(height: 5),
+                        // const SizedBox(height: 5),
                       ],
 
-                      if (messageType == "video" && attachmentDetails != null && attachmentDetails.isNotEmpty) ...[
+                      if (messageType == "video" &&
+                          attachmentDetails != null &&
+                          attachmentDetails.isNotEmpty) ...[
                         for (var file in attachmentDetails)
                           if (file.url != null)
-                            Stack(
+                            Column(
                               children: [
-                                VideoBubble(videoUrl: file.url!, width: 200, height: 200, iconSize: 50,),
-                                Positioned(
-                                  right: 8,
-                                  bottom: 8,
-                                  child: IconButton(
-                                    icon: const Icon(Icons.download, color: Colors.white),
-                                    onPressed: () {
-                                      controller.downloadAndSaveFile(file.url!, 'video');
-                                    },
+                                // VideoBubble(videoUrl: file.url!, width: 200, height: 200, iconSize: 50),
+                                VideoBubble(
+                                  videoUrl: file.url!,
+                                  width: 200,
+                                  height: 200,
+                                  isMe: widget.isMe,
+                                  // formattedTime: formattedTime,
+                                  // status: status!,
+                                ),
+
+                                const SizedBox(height: 4),
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 6, vertical: 0),
+                                    // decoration: BoxDecoration(
+                                    //   color: Colors.grey.shade200,
+                                    //   borderRadius: BorderRadius.circular(6),
+                                    // ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(formattedTime,
+                                            style: TextStyle(
+                                                fontSize: 10,
+                                                color: Colors.black87)),
+                                        const SizedBox(width: 4),
+                                        if (widget.isMe)
+                                          Icon(
+                                            status == 'seen'
+                                                ? Icons.done_all
+                                                : Icons.done,
+                                            size: 16,
+                                            color: status == 'seen'
+                                                ? Colors.blue
+                                                : Colors.black54,
+                                          ),
+                                      ],
+                                    ),
                                   ),
                                 ),
-                                Positioned(
-                                  bottom: 8,
-                                  right: 8,
-                                  child: Row(
-                                    children: [
-                                      Text(formattedTime,
-                                          style: TextStyle(fontSize: 10, color: Colors.white, shadows: [Shadow(color: Colors.black, blurRadius: 2)])),
-                                      const SizedBox(width: 4),
-                                      if (widget.isMe)
-                                        Icon(
-                                          status == 'seen' ? Icons.done_all : Icons.done,
-                                          size: 16,
-                                          color: status == 'seen' ? Colors.blue : Colors.white,
-                                        ),
-                                    ],
-                                  ),
-                                ),
+                                // Positioned(
+                                //   right: 8,
+                                //   bottom: 8,
+                                //   child: IconButton(
+                                //     icon: const Icon(Icons.download, color: Colors.white),
+                                //     onPressed: () {
+                                //       controller.downloadAndSaveFile(file.url!, 'video');
+                                //     },
+                                //   ),
+                                // ),
+
+                                // Positioned(
+                                //   bottom: 8,
+                                //   right: 8,
+                                //   child: Row(
+                                //     children: [
+                                //       Text(formattedTime,
+                                //           style: TextStyle(fontSize: 10, color: Colors.white, shadows: [Shadow(color: Colors.black, blurRadius: 2)])),
+                                //       const SizedBox(width: 4),
+                                //       if (widget.isMe)
+                                //         Icon(
+                                //           status == 'seen' ? Icons.done_all : Icons.done,
+                                //           size: 16,
+                                //           color: status == 'seen' ? Colors.blue : Colors.white,
+                                //         ),
+                                //     ],
+                                //   ),
+                                // ),
                               ],
                             )
                       ],
 
-                      if (messageType == "audio" && attachmentDetails != null && attachmentDetails.isNotEmpty) ...[
+                      if (messageType == "audio" &&
+                          attachmentDetails != null &&
+                          attachmentDetails.isNotEmpty) ...[
                         for (var file in attachmentDetails)
                           if (file.url != null)
                             Stack(
                               children: [
                                 AudioPlayerWidget(audioUrl: file.url!),
-                                Positioned( // Adjusted position for download button
+                                Positioned(
+                                  // Adjusted position for download button
                                   right: 0,
                                   bottom: 0,
                                   child: IconButton(
-                                    icon: const Icon(Icons.download, size: 20, color: Colors.black54),
+                                    icon: const Icon(Icons.download,
+                                        size: 20, color: Colors.black54),
                                     onPressed: () {
-                                      controller.downloadAndSaveFile(file.url!, 'audio');
+                                      controller.downloadAndSaveFile(
+                                          file.url!, 'audio');
                                     },
                                   ),
                                 ),
@@ -1008,13 +1137,24 @@ class _ChatBubbleState extends State<ChatBubble> {
                                   child: Row(
                                     children: [
                                       Text(formattedTime,
-                                          style: TextStyle(fontSize: 10, color: Colors.white, shadows: [Shadow(color: Colors.black, blurRadius: 2)])),
+                                          style: TextStyle(
+                                              fontSize: 10,
+                                              color: Colors.white,
+                                              shadows: [
+                                                Shadow(
+                                                    color: Colors.black,
+                                                    blurRadius: 2)
+                                              ])),
                                       const SizedBox(width: 4),
                                       if (widget.isMe)
                                         Icon(
-                                          status == 'seen' ? Icons.done_all : Icons.done,
+                                          status == 'seen'
+                                              ? Icons.done_all
+                                              : Icons.done,
                                           size: 16,
-                                          color: status == 'seen' ? Colors.blue : Colors.white,
+                                          color: status == 'seen'
+                                              ? Colors.blue
+                                              : Colors.white,
                                         ),
                                     ],
                                   ),
@@ -1024,9 +1164,13 @@ class _ChatBubbleState extends State<ChatBubble> {
                         const SizedBox(height: 5),
                       ],
 
-                      if (messageType == "document" && attachmentDetails != null && attachmentDetails.isNotEmpty) ...[
+                      if (messageType == "document" &&
+                          attachmentDetails != null &&
+                          attachmentDetails.isNotEmpty) ...[
                         ...attachmentDetails.map<Widget>((dynamic file) {
-                          if (file is! UploadFile || file.name == null || file.url == null) return const SizedBox.shrink();
+                          if (file is! UploadFile ||
+                              file.name == null ||
+                              file.url == null) return const SizedBox.shrink();
                           return FutureBuilder<bool>(
                               future: file.isFileDownloadedLocally(),
                               builder: (context, snapshot) {
@@ -1035,19 +1179,25 @@ class _ChatBubbleState extends State<ChatBubble> {
                                   onTap: () async {
                                     try {
                                       if (!downloaded) {
-                                        final path = await ChatController().downloadFileToLocal(file);
+                                        final path = await ChatController()
+                                            .downloadFileToLocal(file);
                                         if (path != null) {
                                           await OpenFilex.open(path);
                                           // downloadController.updateDownloadedStatus(file.name!);
                                         }
                                       } else {
-                                        final dir = await getApplicationDocumentsDirectory();
-                                        final path = '/storage/emulated/0/Download/${file.name}';
+                                        final dir =
+                                            await getApplicationDocumentsDirectory();
+                                        final path =
+                                            '/storage/emulated/0/Download/${file.name}';
                                         await OpenFilex.open(path);
                                       }
                                     } catch (e) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text("Error: ${e.toString()}")),
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                            content:
+                                                Text("Error: ${e.toString()}")),
                                       );
                                     }
                                   },
@@ -1057,7 +1207,8 @@ class _ChatBubbleState extends State<ChatBubble> {
                                         padding: const EdgeInsets.all(8),
                                         decoration: BoxDecoration(
                                           color: Colors.grey.shade100,
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
                                         ),
                                         child: Row(
                                           children: [
@@ -1065,43 +1216,70 @@ class _ChatBubbleState extends State<ChatBubble> {
                                               alignment: Alignment.center,
                                               children: [
                                                 Container(
-                                                    padding: const EdgeInsets.all(8),
+                                                    padding:
+                                                        const EdgeInsets.all(8),
                                                     decoration: BoxDecoration(
-                                                      color: Colors.grey.shade200,
+                                                      color:
+                                                          Colors.grey.shade200,
                                                       shape: BoxShape.circle,
                                                     ),
-                                                    child: const Icon(Icons.insert_drive_file, color: Colors.grey, size: 18,)),
+                                                    child: const Icon(
+                                                      Icons.insert_drive_file,
+                                                      color: Colors.grey,
+                                                      size: 18,
+                                                    )),
                                                 Obx(() {
-                                                  final isDownloading = downloadController.isDownloading(file.name!);
-                                                  final progress = downloadController.getProgress(file.name!);
+                                                  final isDownloading =
+                                                      downloadController
+                                                          .isDownloading(
+                                                              file.name!);
+                                                  final progress =
+                                                      downloadController
+                                                          .getProgress(
+                                                              file.name!);
                                                   return isDownloading
                                                       ? Text(
-                                                    '${(progress * 100).toStringAsFixed(0)}%',
-                                                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
-                                                  )
-                                                      : ((!downloaded && !widget.isMe) // Show download for others, if not downloaded
-                                                      ? const Icon(Icons.download, size: 16, color: Colors.black87)
-                                                      : const SizedBox());
+                                                          '${(progress * 100).toStringAsFixed(0)}%',
+                                                          style: const TextStyle(
+                                                              fontSize: 10,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold),
+                                                        )
+                                                      : ((!downloaded &&
+                                                              !widget
+                                                                  .isMe) // Show download for others, if not downloaded
+                                                          ? const Icon(
+                                                              Icons.download,
+                                                              size: 16,
+                                                              color: Colors
+                                                                  .black87)
+                                                          : const SizedBox());
                                                 }),
                                               ],
                                             ),
                                             const SizedBox(width: 8),
                                             Expanded(
                                               child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
                                                 children: [
                                                   Text(
                                                     file.name!,
                                                     style: const TextStyle(
                                                         fontSize: 14,
-                                                        fontWeight: FontWeight.w500,
-                                                        overflow: TextOverflow.ellipsis),
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                        overflow: TextOverflow
+                                                            .ellipsis),
                                                   ),
-                                                  Text(StringUtils.getFileSizeString(bytes: file.size!),
+                                                  Text(
+                                                    StringUtils
+                                                        .getFileSizeString(
+                                                            bytes: file.size!),
                                                     style: TextStyle(
                                                         fontSize: 12,
-                                                        color: Colors.grey
-                                                    ),
+                                                        color: Colors.grey),
                                                   )
                                                 ],
                                               ),
@@ -1109,14 +1287,14 @@ class _ChatBubbleState extends State<ChatBubble> {
                                           ],
                                         ),
                                       ),
-
                                       Positioned(
                                         bottom: 0,
                                         right: 0,
                                         child: Row(
                                           children: [
                                             Text(
-                                              formattedTime, // pass from parent: DateFormat('hh:mm a').format(message.createdAt)
+                                              formattedTime,
+                                              // pass from parent: DateFormat('hh:mm a').format(message.createdAt)
                                               style: const TextStyle(
                                                 fontSize: 10,
                                                 color: Colors.black54,
@@ -1125,9 +1303,13 @@ class _ChatBubbleState extends State<ChatBubble> {
                                             const SizedBox(width: 4),
                                             if (widget.isMe)
                                               Icon(
-                                                status == 'seen' ? Icons.done_all : Icons.done,
+                                                status == 'seen'
+                                                    ? Icons.done_all
+                                                    : Icons.done,
                                                 size: 16,
-                                                color: status == 'seen' ? Colors.blue : Colors.black54,
+                                                color: status == 'seen'
+                                                    ? Colors.blue
+                                                    : Colors.black54,
                                               ),
                                           ],
                                         ),
@@ -1135,64 +1317,98 @@ class _ChatBubbleState extends State<ChatBubble> {
                                     ],
                                   ),
                                 );
-                              }
-                          );
+                              });
                         }),
                         const SizedBox(height: 5),
                       ],
 
-                      if (messageType == "location" && latitude != null && longitude != null) ...[
-                        GestureDetector(
-                          onTap: () {
-                            String mapUrl =
-                                "https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}";
-                            launchUrl(Uri.parse(mapUrl),
-                                mode: LaunchMode.externalApplication);
-                          },
-                          child: Stack(
-                            children: [
-                              Container(
-                                height: 150,
-                                width: 200,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(8),
-                                  color: Colors.blue[100],
-                                ),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.network(
-                                    "https://static-maps.yandex.ru/1.x/?lang=en-US&ll=${longitude},${latitude}&z=15&l=map&size=200,150",
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                              ),
-                              Positioned(
-                                bottom: 0,
-                                right: 0,
-                                child: Row(
-                                  children: [
-                                    Text(
-                                      formattedTime, // from parent: DateFormat('hh:mm a').format(msg.createdAt)
-                                      style:  TextStyle(
-                                        fontSize: 10,
-                                        color: Colors.grey[600],
-                                        // shadows: [Shadow(color: Colors.black, blurRadius: 2)], // readable over map
+                      if (messageType == "location" &&
+                          latitude != null &&
+                          longitude != null) ...[
+                        Column(
+                          children: [
+                            GestureDetector(
+                              onTap: () {
+                                String mapUrl =
+                                    "https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}";
+                                launchUrl(Uri.parse(mapUrl),
+                                    mode: LaunchMode.externalApplication);
+                              },
+                              child: Stack(
+                                children: [
+                                  Container(
+                                    height: 150,
+                                    width: 200,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(8),
+                                      color: Colors.blue[100],
+                                    ),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Image.network(
+                                        "https://static-maps.yandex.ru/1.x/?lang=en-US&ll=${longitude},${latitude}&z=15&l=map&size=200,150",
+                                        fit: BoxFit.cover,
                                       ),
                                     ),
+                                  ),
+                                  // Positioned(
+                                  //   bottom: 0,
+                                  //   right: 0,
+                                  //   child: Row(
+                                  //     children: [
+                                  //       Text(
+                                  //         formattedTime,
+                                  //         // from parent: DateFormat('hh:mm a').format(msg.createdAt)
+                                  //         style: TextStyle(
+                                  //           fontSize: 10,
+                                  //           color: Colors.grey[600],
+                                  //           // shadows: [Shadow(color: Colors.black, blurRadius: 2)], // readable over map
+                                  //         ),
+                                  //       ),
+                                  //       const SizedBox(width: 4),
+                                  //       if (widget.isMe)
+                                  //         Icon(
+                                  //           status == 'seen'
+                                  //               ? Icons.done_all
+                                  //               : Icons.done,
+                                  //           size: 16,
+                                  //           color: status == 'seen'
+                                  //               ? Colors.blue
+                                  //               : Colors.grey[600],
+                                  //         ),
+                                  //     ],
+                                  //   ),
+                                  // ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
+                                // decoration: BoxDecoration(
+                                //   color: Colors.grey.shade200,
+                                //   borderRadius: BorderRadius.circular(6),
+                                // ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(formattedTime, style: TextStyle(fontSize: 10, color: Colors.black87)),
                                     const SizedBox(width: 4),
                                     if (widget.isMe)
                                       Icon(
                                         status == 'seen' ? Icons.done_all : Icons.done,
                                         size: 16,
-                                        color: status == 'seen' ? Colors.blue : Colors.grey[600],
+                                        color: status == 'seen' ? Colors.blue : Colors.black54,
                                       ),
                                   ],
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 5),
+                        // const SizedBox(height: 5),
                       ],
 
                       // Text Message
@@ -1200,50 +1416,69 @@ class _ChatBubbleState extends State<ChatBubble> {
                         Stack(
                           children: [
                             Padding(
-                              padding: const EdgeInsets.only(right: 70), // leave room for timestamp
+                              padding: const EdgeInsets.only(right: 70),
+                              // leave room for timestamp
                               child: text.contains("zoom.us")
                                   ? GestureDetector(
-                                onTap: () async {
-                                  final url = Uri.parse(text);
-                                  if (await canLaunchUrl(url)) {
-                                    await launchUrl(url, mode: LaunchMode.externalApplication);
-                                  } else {
-                                    Get.snackbar('Error', 'Could not open Zoom link');
-                                  }
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.blue.shade50,
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: Colors.blue),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Image.asset('assets/icon/zoom.png', height: 24, width: 24),
-                                          const SizedBox(width: 8),
-                                          const Text("Zoom Meeting", style: TextStyle(fontWeight: FontWeight.bold)),
-                                        ],
+                                      onTap: () async {
+                                        final url = Uri.parse(text);
+                                        if (await canLaunchUrl(url)) {
+                                          await launchUrl(url,
+                                              mode: LaunchMode
+                                                  .externalApplication);
+                                        } else {
+                                          Get.snackbar('Error',
+                                              'Could not open Zoom link');
+                                        }
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: Colors.blue.shade50,
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                          border:
+                                              Border.all(color: Colors.blue),
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Image.asset(
+                                                    'assets/icon/zoom.png',
+                                                    height: 24,
+                                                    width: 24),
+                                                const SizedBox(width: 8),
+                                                const Text("Zoom Meeting",
+                                                    style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold)),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              DateFormat(
+                                                      'MMM d, yyyy – hh:mm a')
+                                                  .format(localTime),
+                                              style: TextStyle(
+                                                  color: Colors.grey[600],
+                                                  fontSize: 12),
+                                            ),
+                                          ],
+                                        ),
                                       ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        DateFormat('MMM d, yyyy – hh:mm a').format(localTime),
-                                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              )
+                                    )
                                   : Text(
-                                text,
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  color: widget.isMe ? Colors.black87 : Colors.black,
-                                ),
-                              ),
+                                      text,
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        color: widget.isMe
+                                            ? Colors.black87
+                                            : Colors.black,
+                                      ),
+                                    ),
                             ),
 
                             // WhatsApp style timestamp + status inside bubble
@@ -1255,22 +1490,30 @@ class _ChatBubbleState extends State<ChatBubble> {
                                 children: [
                                   if (isEdited)
                                     Padding(
-                                      padding: const EdgeInsets.only(right: 4.0),
+                                      padding:
+                                          const EdgeInsets.only(right: 4.0),
                                       child: Text(
                                         'Edited',
-                                        style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                                        style: TextStyle(
+                                            fontSize: 10,
+                                            color: Colors.grey[600]),
                                       ),
                                     ),
                                   Text(
                                     formattedTime,
-                                    style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                                    style: TextStyle(
+                                        fontSize: 10, color: Colors.grey[600]),
                                   ),
                                   const SizedBox(width: 4),
                                   if (widget.isMe)
                                     Icon(
-                                      status == 'seen' ? Icons.done_all : Icons.done,
+                                      status == 'seen'
+                                          ? Icons.done_all
+                                          : Icons.done,
                                       size: 16,
-                                      color: status == 'seen' ? Colors.blue : Colors.grey[600],
+                                      color: status == 'seen'
+                                          ? Colors.blue
+                                          : Colors.grey[600],
                                     ),
                                 ],
                               ),
@@ -1374,7 +1617,8 @@ class _ChatBubbleState extends State<ChatBubble> {
     final elapsedMinutes = DateTime.now().difference(createdAt!).inMinutes;
 
     final canEdit = widget.isMe && elapsedMinutes <= 60; // Editable for 1 hour
-    final canDelete = widget.isMe && elapsedMinutes <= 180; // Deletable for 3 hours
+    final canDelete =
+        widget.isMe && elapsedMinutes <= 180; // Deletable for 3 hours
 
     showModalBottomSheet(
       context: context,
@@ -1382,13 +1626,16 @@ class _ChatBubbleState extends State<ChatBubble> {
         return SafeArea(
           child: Wrap(
             children: [
-              if (widget.isMe && canEdit && (widget.message?.messageType == 'text'))
+              if (widget.isMe &&
+                  canEdit &&
+                  (widget.message?.messageType == 'text'))
                 ListTile(
                   leading: const Icon(Icons.edit),
                   title: const Text("Edit"),
                   onTap: () {
                     Navigator.pop(context);
-                    controller.setEditingMessage(widget.message!); // Set message for editing
+                    controller.setEditingMessage(
+                        widget.message!); // Set message for editing
                   },
                 ),
               if (widget.isMe && canDelete)
@@ -1402,7 +1649,8 @@ class _ChatBubbleState extends State<ChatBubble> {
                       context: context,
                       builder: (context) => AlertDialog(
                         title: const Text("Delete message?"),
-                        content: const Text("Are you sure you want to delete this message?"),
+                        content: const Text(
+                            "Are you sure you want to delete this message?"),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(context, false),
@@ -1410,7 +1658,8 @@ class _ChatBubbleState extends State<ChatBubble> {
                           ),
                           TextButton(
                             onPressed: () => Navigator.pop(context, true),
-                            child: const Text("Delete", style: TextStyle(color: Colors.red)),
+                            child: const Text("Delete",
+                                style: TextStyle(color: Colors.red)),
                           ),
                         ],
                       ),

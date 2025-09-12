@@ -299,6 +299,12 @@ class _MessageUserListState extends State<MessageUserList>
         return const Center(child: Text("No users found"));
       }
 
+      users.sort((a, b) {
+        final aDate = a.lastMessage?.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final bDate = b.lastMessage?.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+        return bDate.compareTo(aDate); // descending order
+      });
+
       return ListView.builder(
         itemCount: users.length,
         itemBuilder: (context, index) {
@@ -345,10 +351,17 @@ class _MessageUserListState extends State<MessageUserList>
                                           fontWeight: FontWeight.bold),
                                       overflow: TextOverflow.ellipsis,
                                     ),
+                                    // Text(
+                                    //   chatUser.messagePreview,
+                                    //   style: TextStyle(
+                                    //       color: Colors.grey.shade500),
+                                    //   overflow: TextOverflow.ellipsis,
+                                    // ),
                                     Text(
-                                      chatUser.messagePreview,
-                                      style: TextStyle(
-                                          color: Colors.grey.shade500),
+                                      (chatUser.messagePreview != null && chatUser.messagePreview.trim().isNotEmpty)
+                                          ? chatUser.messagePreview
+                                          : "No message yet - start your first chat!",
+                                      style: TextStyle(color: Colors.grey.shade500),
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ],

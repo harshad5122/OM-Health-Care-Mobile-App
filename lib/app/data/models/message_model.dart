@@ -24,6 +24,7 @@ class MessageModel {
   final MessageModel? replyToDetails;
   final String? localFilePath;
   final bool isEdited;
+  final bool isRead;
 
   MessageModel({
     this.messageId,
@@ -48,6 +49,7 @@ class MessageModel {
     this.replyToDetails,
     this.localFilePath,
     this.isEdited = false,
+    this.isRead = false,
   }) : createdAt = createdAt is int
       ? DateTime.fromMillisecondsSinceEpoch(createdAt)
       : createdAt is String
@@ -103,6 +105,7 @@ class MessageModel {
           : null,
 
       isEdited: json["is_edited"] ?? false,
+      isRead: json["is_read"] ?? false,
     );
   }
 
@@ -131,6 +134,7 @@ class MessageModel {
       'reply_to_details': replyToDetails?.toJson(),
 
       "is_edited": isEdited,
+      "is_read": isRead,
     };
   }
 
@@ -160,6 +164,7 @@ class MessageModel {
     MessageModel? replyToDetails,
 
     bool? isEdited,
+    bool? isRead,
   }) {
     return MessageModel(
       messageId: messageId ?? this.messageId,
@@ -183,6 +188,7 @@ class MessageModel {
       replyToDetails: replyToDetails ?? this.replyToDetails,
 
       isEdited: isEdited ?? this.isEdited,
+      isRead: isRead ?? this.isRead,
     );
   }
 

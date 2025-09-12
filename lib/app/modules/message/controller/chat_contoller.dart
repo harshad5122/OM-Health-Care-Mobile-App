@@ -501,6 +501,7 @@ import '../../../global/global.dart';
 import '../../../global/tokenStorage.dart';
 import '../../../socket/socket_service.dart';
 import '../../../utils/api_constants.dart';
+import '../../notification/notification_service.dart';
 import '../../upload_file/controller/upload_file_controller.dart';
 // import '../models/group_message_model.dart';
 import 'package:http/http.dart' as http;
@@ -525,13 +526,16 @@ class ChatController extends GetxController {
   // Rx<GroupMessageModel?> replyGroupMessage = Rx<GroupMessageModel?>(null);
 
   final ScrollController _scrollController = ScrollController();
-  // final notificationService = Get.find<NotificationService>();
+  final notificationService = Get.find<NotificationService>();
 
   // final ChatListController chatController = Get.put(ChatListController());
   final UserListController chatController = Get.put(UserListController());
 
   // Add this variable to track which message is being edited
   Rx<MessageModel?> editingMessage = Rx<MessageModel?>(null);
+
+  final unreadIndex = (-1).obs;
+  final unreadMarkerShown = true.obs;
 
   ChatController({this.receiverId});
 
@@ -565,12 +569,49 @@ class ChatController extends GetxController {
 
   }
 
+  int get unreadCount {
+    return messages
+        .where((msg) => msg.isRead == false && msg.receiverId == Global.userId)
+        .length;
+  }
+
+  // void setUnreadMarker() {
+  //   if (!unreadMarkerShown.value) return;
+  //
+  //   final index = messages.indexWhere(
+  //         (msg) => msg.isRead == false && msg.receiverId == Global.userId,
+  //   );
+  //
+  //   if (index != -1) {
+  //     unreadIndex.value = index;
+  //   }
+  // }
+
+  void setUnreadMarker() {
+    if (!unreadMarkerShown.value) return;
+
+    final unreadMessages = messages
+        .asMap()
+        .entries
+        .where((entry) => entry.value.isRead == false && entry.value.receiverId == Global.userId)
+        .toList();
+
+    if (unreadMessages.isNotEmpty) {
+      // Since list is reversed in UI (newest first), we need the LAST unread message in the list
+      unreadIndex.value = unreadMessages.last.key;
+    } else {
+      unreadIndex.value = -1;
+    }
+  }
+
+
 
   void initSocket({required String userId}) {
 
     // print('Room Id :::: ${roomId}');
 
     socketService.connectSocket(userId);
+    setUnreadMarker();
     // if(roomId != null){
     //   socketService.joinRoom(userId, roomId);
     // }
@@ -591,7 +632,7 @@ class ChatController extends GetxController {
             message.senderDetails = [user];
             print('After chat senderDetails ::: ${message.senderDetails}');
           }else {
-            print("⚠️ User details not found for ID: ${message.senderId}");
+            print("⚠️User details not found for ID: ${message.senderId}");
           }
 
         }
@@ -615,6 +656,8 @@ class ChatController extends GetxController {
         print('🔍 Map Parsed Notification: $mapData');
         print('📎 Attachments: ${mapData['attachmentDetails']}');
         final notification = MessageModel.fromJson(mapData);
+
+        handleMessageNotification(notification);
 
       }catch (e, stack) {
         print(" Failed to parse notification: $e");
@@ -909,6 +952,79 @@ class ChatController extends GetxController {
   void markMessageAsSeen(String messageId, String userId) {
     socketService.emitMessageSeen(messageId, userId);
   }
+
+  void handleMessageNotification(MessageModel notification){
+    messages.add(notification);
+
+    print('notification message type ===> ${notification.messageType}');
+    print('attachmentDetails ===> ${notification.attachmentDetails}');
+
+    final attachments = notification.attachmentDetails;
+
+    if(notification.messageType == 'image'){
+      if (attachments != null && attachments.isNotEmpty) {
+        notificationService.showNotification(
+          id: DateTime
+              .now()
+              .millisecondsSinceEpoch ~/ 1000,
+          title: 'New Image Message',
+          body: notification.message ?? 'You received an image!',
+          imageUrl: attachments?.first.url, // Pass the URL of the image
+        );
+      }else {
+        print('⚠️ Image message received but attachments are empty or null.');
+      }
+    }
+    else if(notification.messageType == 'document'){
+      notificationService.showNotification(
+        id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+        title: 'New Document',
+        body: 'You received a document: ${notification.attachmentDetails?.first.name}',
+      );
+    }
+    else if (notification.messageType == 'video') {
+      notificationService.showNotification(
+        id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+        title: 'New Video',
+        body: 'Video',
+      );
+    }
+    else if (notification.messageType == 'audio') {
+      notificationService.showNotification(
+        id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+        title: 'New Audio',
+        body: 'Video',
+      );
+    }
+    else if (notification.messageType == 'location') {
+      notificationService.showNotification(
+        id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+        title: 'New Location',
+        body: 'Location',
+      );
+    }else {
+      notificationService.showNotification(
+        id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+        title: 'New Message',
+        body: notification.message ?? '',
+      );
+    }
+
+  }
+
+  void markAllAsRead() {
+    for (var i = 0; i < messages.length; i++) {
+      if (!messages[i].isRead && messages[i].receiverId == Global.userId) {
+        messages[i] = messages[i].copyWith(isRead: true, messageStatus: 'seen');
+        // Also notify backend if required
+        if (messages[i].messageId != null) {
+          markMessageAsSeen(messages[i].messageId!, Global.userId!);
+        }
+      }
+    }
+    messages.refresh();
+  }
+
 
   Future<void> _scrollToBottom() async {
     await Future.delayed(Duration(milliseconds: 100));

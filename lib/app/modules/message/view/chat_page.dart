@@ -138,16 +138,23 @@ class _ChatPageState extends State<ChatPage> {
   @override
   void initState() {
     super.initState();
-    // Initialize the controller in initState
     chatController = Get.put(ChatController(receiverId: widget.receiverId));
     final socketService = Get.find<SocketService>();
     socketService.emitUserOnline(Global.userId??'');
+    // Once messages are loaded, calculate unread position
+    ever(chatController.messages, (_) {
+      chatController.setUnreadMarker();
+    });
   }
+
 
   @override
   void dispose() {
     final socketService = Get.find<SocketService>();
     socketService.emitUserLeftMessagePage(Global.userId??'');
+
+    chatController.markAllAsRead();
+
     chatController.dispose(); // Dispose the controller when the page is closed
     super.dispose();
   }
@@ -195,17 +202,6 @@ class _ChatPageState extends State<ChatPage> {
                       if (showDateHeader)
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 8.0),
-                          // child: Chip(
-                          //   label: Text(
-                          //     formattedDate,
-                          //     style: const TextStyle(
-                          //       fontSize: 12,
-                          //       fontWeight: FontWeight.bold,
-                          //       color: Colors.white,
-                          //     ),
-                          //   ),
-                          //   backgroundColor: Colors.grey.shade700,
-                          // ),
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                             decoration: BoxDecoration(
@@ -221,8 +217,29 @@ class _ChatPageState extends State<ChatPage> {
                               ),
                             ),
                           ),
-
                         ),
+
+                      if (chatController.unreadIndex.value == index && chatController.unreadMarkerShown.value)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.green.shade100,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              "${chatController.unreadCount} unread messages",
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green,
+                              ),
+                            ),
+                          ),
+                        ),
+
                       // Pass message and isMe to ChatBubble
                       ChatBubble(message: message, isMe: isMe),
                     ],

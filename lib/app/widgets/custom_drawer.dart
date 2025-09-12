@@ -50,7 +50,7 @@ class CustomDrawer extends StatelessWidget {
           _buildMenuItem(Icons.message, "Messages", () {Get.toNamed(AppRoutes.messageUserList);}),
           _buildMenuItem(Icons.local_hospital, "Add Doctor", () {Get.toNamed(AppRoutes.addDoctor);}),
           _buildMenuItem(Icons.group_add, "Add User", () {Get.toNamed(AppRoutes.addUser);}),
-          _buildMenuItem(Icons.people, "Member", () {}),
+          _buildMenuItem(Icons.people, "Member", () {Get.toNamed(AppRoutes.member);}),
 
           const Spacer(),
 

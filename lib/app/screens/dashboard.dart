@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../data/controllers/dashboard_screen_controller.dart';
 import '../widgets/custom_drawer.dart';
 
 
 class DashboardPage extends StatelessWidget {
-  const DashboardPage({super.key});
+
+  final DashboardScreenController controller = Get.put(DashboardScreenController());
+  // const DashboardPage({super.key});
 
   @override
   Widget build(BuildContext context) {

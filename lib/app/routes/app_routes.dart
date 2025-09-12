@@ -8,4 +8,5 @@ abstract class AppRoutes {
   static const changePassword = '/change-password';
   static const messageUserList = '/messageUserList';
   static const chat = '/chat';
+  static const member = '/member';
 }

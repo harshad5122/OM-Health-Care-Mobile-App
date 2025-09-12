@@ -37,7 +37,12 @@ class AddDoctorPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Add Doctor")),
+      appBar: AppBar(
+          // title: const Text("Add Doctor")
+        title: Obx(() =>
+            Text(controller.isEditMode.value ? "Edit Doctor" : "Add Doctor")),
+        backgroundColor: Get.theme.primaryColor,
+      ),
       body: Form(
         key: controller.formKey,
         child: SingleChildScrollView(
@@ -346,8 +351,11 @@ class AddDoctorPage extends StatelessWidget {
                 Obx(() => CheckboxListTile(
                   value: controller.sameAsCurrent.value,
                   title: const Text("Same as current address"),
-                  onChanged: (val) =>
-                  controller.sameAsCurrent.value = val ?? false,
+                  onChanged: (val) {
+                    controller.toggleSameAsCurrent(val ?? false);
+                  },
+                  // onChanged: (val) =>
+                  // controller.sameAsCurrent.value = val ?? false,
                 )),
                 if (!controller.sameAsCurrent.value) ...[
                   CustomTextField(
@@ -514,14 +522,24 @@ class AddDoctorPage extends StatelessWidget {
                           child: Container(
                             alignment: Alignment.center,
                             padding: const EdgeInsets.symmetric(vertical: 12),
-                            child: const Text(
-                              "Save Doctor",
-                              style: TextStyle(
+                            child: Obx(() => Text(
+                              controller.isEditMode.value
+                                  ? "Update Doctor"
+                                  : "Save Doctor",
+                              style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
                                 color: Colors.white,
                               ),
-                            ),
+                            )),
+                            // const Text(
+                            //   "Save Doctor",
+                            //   style: TextStyle(
+                            //     fontSize: 16,
+                            //     fontWeight: FontWeight.w700,
+                            //     color: Colors.white,
+                            //   ),
+                            // ),
                           ),
                         ),
                       ),

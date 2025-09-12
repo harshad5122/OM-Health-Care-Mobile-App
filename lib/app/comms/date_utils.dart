@@ -24,7 +24,7 @@ class DateUtilsHelper {
     }
 
     // For older dates
-    return DateFormat('d/M/yy').format(parsedDate); // e.g., "4/9/25"
+    return DateFormat('dd/MM/yy').format(parsedDate); // e.g., "4/9/25"
   }
 }
 
