@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
 import '../global/global.dart';
 import '../routes/app_routes.dart';
 
@@ -43,14 +42,18 @@ class CustomDrawer extends StatelessWidget {
           ),
 
           // Menu Section
-          _buildMenuItem(Icons.dashboard, "Dashboard", () {
-            Get.back();
-          }),
-          _buildMenuItem(Icons.person, "Profile", () {Get.toNamed(AppRoutes.profile);}),
-          _buildMenuItem(Icons.message, "Messages", () {Get.toNamed(AppRoutes.messageUserList);}),
-          _buildMenuItem(Icons.local_hospital, "Add Doctor", () {Get.toNamed(AppRoutes.addDoctor);}),
-          _buildMenuItem(Icons.group_add, "Add User", () {Get.toNamed(AppRoutes.addUser);}),
-          _buildMenuItem(Icons.people, "Member", () {Get.toNamed(AppRoutes.member);}),
+          // _buildMenuItem(Icons.dashboard, "Dashboard", () {
+          //   Get.back();
+          // }),
+          // _buildMenuItem(Icons.person, "Profile", () {Get.toNamed(AppRoutes.profile);}),
+          // _buildMenuItem(Icons.message, "Messages", () {Get.toNamed(AppRoutes.messageUserList);}),
+          // _buildMenuItem(Icons.local_hospital, "Add Doctor", () {Get.toNamed(AppRoutes.addDoctor);}),
+          // _buildMenuItem(Icons.group_add, "Add User", () {Get.toNamed(AppRoutes.addUser);}),
+          // _buildMenuItem(Icons.people, "Member", () {Get.toNamed(AppRoutes.member);}),
+          // _buildMenuItem(Icons.event, "Book Appointment", () {Get.toNamed(AppRoutes.appointment);}),
+
+          // Role-based menu
+          ..._buildMenuForRole(Global.role),
 
           const Spacer(),
 
@@ -68,6 +71,71 @@ class CustomDrawer extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  List<Widget> _buildMenuForRole(int? role) {
+    switch (role) {
+      case 1: // User
+        return [
+          _buildMenuItem(Icons.person, "Profile", () {
+            Get.toNamed(AppRoutes.profile);
+          }),
+          _buildMenuItem(Icons.message, "Messages", () {
+            Get.toNamed(AppRoutes.messageUserList);
+          }),
+          _buildMenuItem(Icons.event, "Book Appointment", () {
+            Get.toNamed(AppRoutes.appointment);
+          }),
+        ];
+
+      case 2: // Admin
+        return [
+          _buildMenuItem(Icons.dashboard, "Dashboard", () {
+            Get.back();
+          }),
+          _buildMenuItem(Icons.person, "Profile", () {
+            Get.toNamed(AppRoutes.profile);
+          }),
+          _buildMenuItem(Icons.message, "Messages", () {
+            Get.toNamed(AppRoutes.messageUserList);
+          }),
+          _buildMenuItem(Icons.local_hospital, "Add Doctor", () {
+            Get.toNamed(AppRoutes.addDoctor);
+          }),
+          _buildMenuItem(Icons.group_add, "Add User", () {
+            Get.toNamed(AppRoutes.addUser);
+          }),
+          _buildMenuItem(Icons.people, "Member", () {
+            Get.toNamed(AppRoutes.member);
+          }),
+          _buildMenuItem(Icons.event, "Book Appointment", () {
+            Get.toNamed(AppRoutes.appointment);
+          }),
+        ];
+
+      case 3: // Staff
+        return [
+          _buildMenuItem(Icons.person, "Profile", () {
+            Get.toNamed(AppRoutes.profile);
+          }),
+          _buildMenuItem(Icons.message, "Messages", () {
+            Get.toNamed(AppRoutes.messageUserList);
+          }),
+          _buildMenuItem(Icons.outbond_outlined, "Leave Management", () {
+            // Get.toNamed(AppRoutes.leaveManagement);
+          }),
+          _buildMenuItem(Icons.calendar_today, "Appointments", () {
+            Get.toNamed(AppRoutes.appointment);
+          }),
+        ];
+
+      default:
+        return [
+          const ListTile(
+            title: Text("No menu available"),
+          ),
+        ];
+    }
   }
 
   Widget _buildMenuItem(IconData icon, String title, VoidCallback onTap) {

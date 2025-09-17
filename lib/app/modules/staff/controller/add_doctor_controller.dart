@@ -481,8 +481,8 @@ class AddDoctorController extends GetxController {
         if (isEditMode.value) {
           if (data["success"] == 1 || data["code"] == 200) {
             Get.snackbar("Success", data["msg"] ?? "Doctor updated successfully");
-            Get.back(result: true); // return success
-            Get.offAllNamed("/member");
+            Get.back(result: true);
+            Get.toNamed("/member");
           } else {
             Get.snackbar("Error", data["msg"] ?? "Failed to update doctor");
           }

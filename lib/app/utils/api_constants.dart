@@ -1,5 +1,5 @@
 class ApiConstants {
-  static const String BASE_URL =  "https://deca9579ae82.ngrok-free.app/api";
+  static const String BASE_URL =  "https://e21461dcd5c4.ngrok-free.app/api";
 
   // AUTH ROUTES
   static const String SIGNUP = "$BASE_URL/auth/signup";
@@ -31,5 +31,17 @@ class ApiConstants {
   static const String GET_USER_LIST = "$BASE_URL/user/list";
   static const String GET_STAFF_LIST = "$BASE_URL/staff/list";
   static const String GET_ADMIN_LIST = "$BASE_URL/admin/list";
+
+  // APPOINTMENT ROUTES
+  static const String CREATE_APPOINTMENT = "$BASE_URL/create-appointment";
+  static const String GET_PATIENTS = "$BASE_URL/get-patients";
+  static const String UPDATE_APPOINTMENT_STATUS = "$BASE_URL/update-status";
+  static const String GET_APPOINTMENT_BY_DOCTOR = "$BASE_URL/get-appointment-by-doctor";
+  static const String UPDATE_APPOINTMENT = "$BASE_URL/update-appointment";
+
+
+  static const String GET_NOTIFICATION = "$BASE_URL/notification";
+
+
 
 }

@@ -21,6 +21,10 @@ class StaffListModel {
   String? emergencyContactRelation;
   String? emergencyContactContact;
 
+  int? workExperienceTotalYears;
+  String? workExperienceLastHospital;
+  String? workExperiencePosition;
+
   StaffListModel({
     this.id,
     this.firstname,
@@ -43,6 +47,10 @@ class StaffListModel {
     this.emergencyContactName,
     this.emergencyContactRelation,
     this.emergencyContactContact,
+
+    this.workExperienceTotalYears,
+    this.workExperienceLastHospital,
+    this.workExperiencePosition,
   });
 
   factory StaffListModel.fromJson(Map<String, dynamic> json) => StaffListModel(
@@ -67,6 +75,10 @@ class StaffListModel {
     emergencyContactName: json["emergencyContact_name"],
     emergencyContactRelation: json["emergencyContact_relation"],
     emergencyContactContact: json["emergencyContact_contact"],
+
+    workExperienceTotalYears: json["workExperience_totalYears"],
+    workExperienceLastHospital: json["workExperience_lastHospital"],
+    workExperiencePosition: json["workExperience_position"],
   );
 
   Map<String, dynamic> toJson() => {
@@ -91,5 +103,8 @@ class StaffListModel {
     "emergencyContact_name": emergencyContactName,
     "emergencyContact_relation": emergencyContactRelation,
     "emergencyContact_contact": emergencyContactContact,
+    "workExperience_totalYears": workExperienceTotalYears,
+    "workExperience_lastHospital": workExperienceLastHospital,
+    "workExperience_position": workExperiencePosition,
   };
 }

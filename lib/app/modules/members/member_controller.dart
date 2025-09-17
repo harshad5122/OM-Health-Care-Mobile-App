@@ -1,6 +1,5 @@
 // lib/controllers/members_controller.dart
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
@@ -10,6 +9,7 @@ import '../../data/models/staff_list_model.dart';
 import '../../data/models/user_list_model.dart';
 import '../../global/tokenStorage.dart';
 import '../../utils/api_constants.dart';
+import '../../widgets/custom_confirm_dialog.dart';
 
 
 enum MemberTab { users, doctors }
@@ -144,6 +144,7 @@ class MembersController extends GetxController {
   }
 
   Future<void> fetchDoctors({bool clear = false}) async {
+    print('enter here');
     if (isLoading.value) return;
     isLoading.value = true;
     try {
@@ -170,7 +171,8 @@ class MembersController extends GetxController {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
       });
-
+      print('response of get api==> ${response}');
+      print('response get api==> ${response.statusCode}');
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == 1 &&
@@ -180,8 +182,10 @@ class MembersController extends GetxController {
           final fetched = body.map((e) => StaffListModel.fromJson(e as Map<String, dynamic>)).toList();
           if (clear) {
             doctors.assignAll(fetched);
+            print('fetched data => ${fetched}');
           } else {
             doctors.addAll(fetched);
+            print('fetched add data => ${fetched}');
           }
           if (fetched.length < pageSize) {
             doctorsHasMore.value = false;
@@ -269,6 +273,15 @@ class MembersController extends GetxController {
             width: 300, // Adjust width as needed
             height: 300, // Adjust height as needed
             child: SfDateRangePicker(
+              backgroundColor: Colors.grey.shade50,
+              headerStyle: DateRangePickerHeaderStyle(
+                backgroundColor: Get.theme.primaryColor,
+                textStyle: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               onSelectionChanged: onDateRangeSelected,
               selectionMode: DateRangePickerSelectionMode.range,
               initialSelectedRange: PickerDateRange(fromDate.value, toDate.value),
@@ -361,16 +374,47 @@ class MembersController extends GetxController {
     }
   }
 
+  // void deleteUser(UserListModel user) {
+  //   Get.defaultDialog(
+  //     title: 'Delete User',
+  //     middleText: 'Are you sure you want to delete ${user.firstname} ${user.lastname}?',
+  //     textConfirm: 'Delete',
+  //     textCancel: 'Cancel',
+  //     confirmTextColor: Colors.white,
+  //     onConfirm: () async {
+  //       // Implement actual delete logic
+  //       Get.back(); // Close dialog
+  //       try {
+  //         final token = await TokenStorage.getToken();
+  //         final uri = Uri.parse("${ApiConstants.DELET_USER}/${user.id}");
+  //         final response = await http.delete(uri, headers: {
+  //           'Authorization': 'Bearer $token',
+  //           'Content-Type': 'application/json',
+  //         });
+  //
+  //         final data = jsonDecode(response.body);
+  //         if (response.statusCode == 200 && data['success'] == 1) {
+  //           Get.snackbar('Success', data['msg'] ?? 'User deleted');
+  //           fetchUsers(clear: true);
+  //         } else {
+  //           Get.snackbar('Error', data['msg'] ?? 'Failed to delete user');
+  //         }
+  //       } catch (e) {
+  //         Get.snackbar('Exception', e.toString());
+  //       }
+  //       // Get.snackbar('Deleted', '${user.firstname} ${user.lastname} deleted');
+  //       fetchUsers(clear: true); // Refresh list
+  //     },
+  //   );
+  // }
+
   void deleteUser(UserListModel user) {
-    Get.defaultDialog(
+    CustomConfirmDialog.show(
       title: 'Delete User',
-      middleText: 'Are you sure you want to delete ${user.firstname} ${user.lastname}?',
-      textConfirm: 'Delete',
-      textCancel: 'Cancel',
-      confirmTextColor: Colors.white,
+      message: 'Are you sure you want to delete ${user.firstname} ${user.lastname}?',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
       onConfirm: () async {
-        // Implement actual delete logic
-        Get.back(); // Close dialog
         try {
           final token = await TokenStorage.getToken();
           final uri = Uri.parse("${ApiConstants.DELET_USER}/${user.id}");
@@ -389,16 +433,11 @@ class MembersController extends GetxController {
         } catch (e) {
           Get.snackbar('Exception', e.toString());
         }
-        // Get.snackbar('Deleted', '${user.firstname} ${user.lastname} deleted');
-        fetchUsers(clear: true); // Refresh list
+        fetchUsers(clear: true);
       },
     );
   }
 
-  // void editStaff(StaffListModel staff) {
-  //   Get.snackbar('Edit Staff', 'Editing staff: ${staff.firstname} ${staff.lastname}');
-  //   // Implement actual navigation to edit screen or show a form
-  // }
 
   void editStaff(StaffListModel staff) async {
     if (staff.id == null || staff.id!.isEmpty) {
@@ -427,16 +466,47 @@ class MembersController extends GetxController {
   }
 
 
+  // void deleteStaff(StaffListModel staff) {
+  //   Get.defaultDialog(
+  //     title: 'Delete Staff',
+  //     middleText: 'Are you sure you want to delete ${staff.firstname} ${staff.lastname}?',
+  //     textConfirm: 'Delete',
+  //     textCancel: 'Cancel',
+  //     confirmTextColor: Colors.white,
+  //     onConfirm: () async {
+  //       // Implement actual delete logic
+  //       Get.back(); // Close dialog
+  //       try {
+  //         final token = await TokenStorage.getToken();
+  //         final uri = Uri.parse("${ApiConstants.DELETE_DOCTOR}/${staff.id}");
+  //         final response = await http.delete(uri, headers: {
+  //           'Authorization': 'Bearer $token',
+  //           'Content-Type': 'application/json',
+  //         });
+  //
+  //         final data = jsonDecode(response.body);
+  //         if (response.statusCode == 200 && data['success'] == 1) {
+  //           Get.snackbar('Success', data['msg'] ?? 'Doctor deleted');
+  //           fetchDoctors(clear: true);
+  //         } else {
+  //           Get.snackbar('Error', data['msg'] ?? 'Failed to delete doctor');
+  //         }
+  //       } catch (e) {
+  //         Get.snackbar('Exception', e.toString());
+  //       }
+  //       // Get.snackbar('Deleted', '${staff.firstname} ${staff.lastname} deleted');
+  //       fetchDoctors(clear: true); // Refresh list
+  //     },
+  //   );
+  // }
+
   void deleteStaff(StaffListModel staff) {
-    Get.defaultDialog(
-      title: 'Delete Staff',
-      middleText: 'Are you sure you want to delete ${staff.firstname} ${staff.lastname}?',
-      textConfirm: 'Delete',
-      textCancel: 'Cancel',
-      confirmTextColor: Colors.white,
+    CustomConfirmDialog.show(
+      title: "Delete Staff",
+      message: "Are you sure you want to delete ${staff.firstname} ${staff.lastname}?",
+      confirmText: "Delete",
+      cancelText: "Cancel",
       onConfirm: () async {
-        // Implement actual delete logic
-        Get.back(); // Close dialog
         try {
           final token = await TokenStorage.getToken();
           final uri = Uri.parse("${ApiConstants.DELETE_DOCTOR}/${staff.id}");
@@ -455,11 +525,11 @@ class MembersController extends GetxController {
         } catch (e) {
           Get.snackbar('Exception', e.toString());
         }
-        // Get.snackbar('Deleted', '${staff.firstname} ${staff.lastname} deleted');
-        fetchDoctors(clear: true); // Refresh list
+        fetchDoctors(clear: true);
       },
     );
   }
+
 
   // Dispose of controllers
   @override

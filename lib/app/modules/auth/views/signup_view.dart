@@ -117,6 +117,40 @@ class SignupView extends StatelessWidget {
                   ),
                   const SizedBox(height: 15),
 
+                  // DOB
+
+                  Obx(() {
+                    final dob = controller.dob.value;
+                    return GestureDetector(
+                      onTap: () async {
+                        DateTime? picked = await showDatePicker(
+                          context: context,
+                          initialDate: dob ?? DateTime(2000, 1, 1),
+                          firstDate: DateTime(1900),
+                          lastDate: DateTime.now(),
+                        );
+                        if (picked != null) {
+                          controller.dob.value = picked;
+                        }
+                      },
+                      child: AbsorbPointer(
+                        child: CustomTextField(
+                          label: "Date of Birth",
+                          hint: dob == null
+                              ? "Select date of birth"
+                              : "${dob.day}-${dob.month}-${dob.year}",
+                          controller: TextEditingController(
+                            text: dob == null
+                                ? ""
+                                : "${dob.day}-${dob.month}-${dob.year}",
+                          ),
+                          prefixIcon: Icons.calendar_today,
+                        ),
+                      ),
+                    );
+                  }),
+                  const SizedBox(height: 15),
+
                   // Address
                   CustomTextField(
                     label: "Address",

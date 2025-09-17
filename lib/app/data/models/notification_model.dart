@@ -41,12 +41,17 @@ class NotificationModel {
       referenceId: json['reference_id']?.toString(),
       referenceModel: json['reference_model']?.toString(),
       read: json['read'] ?? false,
-      createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt']) : null,
-      updatedAt: json['updatedAt'] != null ? DateTime.tryParse(json['updatedAt']) : null,
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'])
+          : null,
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.tryParse(json['updatedAt'])
+          : null,
       messageType: json['message_type']?.toString(),
       attachmentDetails: json['attechment_details'] != null
           ? List<Attachment>.from(
-        (json['attechment_details'] as List).map((e) => Attachment.fromJson(e)),
+        (json['attechment_details'] as List)
+            .map((e) => Attachment.fromJson(e)),
       )
           : [],
     );
@@ -68,7 +73,40 @@ class NotificationModel {
       "attechment_details": attachmentDetails?.map((e) => e.toJson()).toList(),
     };
   }
+
+  /// ✅ Add this copyWith method
+  NotificationModel copyWith({
+    String? id,
+    String? senderId,
+    String? receiverId,
+    String? type,
+    String? message,
+    String? referenceId,
+    String? referenceModel,
+    bool? read,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    List<Attachment>? attachmentDetails,
+    String? messageType,
+  }) {
+    return NotificationModel(
+      id: id ?? this.id,
+      senderId: senderId ?? this.senderId,
+      receiverId: receiverId ?? this.receiverId,
+      type: type ?? this.type,
+      message: message ?? this.message,
+      referenceId: referenceId ?? this.referenceId,
+      referenceModel: referenceModel ?? this.referenceModel,
+      read: read ?? this.read,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      attachmentDetails: attachmentDetails ?? this.attachmentDetails,
+      messageType: messageType ?? this.messageType,
+    );
+  }
 }
+
+
 
 class Attachment {
   final String? id;

@@ -10,12 +10,12 @@ class SocketService extends GetxService {
 
   Future<SocketService> init() async {
     // Initialize socket connection
-    socket = IO.io(
-      'https://deca9579ae82.ngrok-free.app',
+   socket = IO.io(
+      'https://e21461dcd5c4.ngrok-free.app',
       IO.OptionBuilder()
           .setTransports(['websocket'])
           .enableAutoConnect()
-          .setPath('/socket.io') // If your server uses a specific path
+          // .setPath('/socket.io') // If your server uses a specific path
           .build(),
     );
 
@@ -26,14 +26,17 @@ class SocketService extends GetxService {
       socket.emit('register', userId);
     });
 
-    // socket.onDisconnect((_) => print('Disconnected from socket server'));
-    // socket.onError((error) => print('Socket error: $error'));
-
     return this;
   }
 
   void listenForNotifications(Function(dynamic) onNotification) {
+
     socket.on('new_notification', (data) {
+      onNotification(data);
+    });
+
+    socket.on('appointmentRequest', (data) {
+      print("📩 Appointment request received: $data");
       onNotification(data);
     });
   }

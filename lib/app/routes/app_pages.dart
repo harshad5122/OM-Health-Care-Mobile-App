@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:om_health_care_app/app/modules/appointment/views/appointment_view.dart';
 import 'package:om_health_care_app/app/modules/auth/views/change_password.dart';
 import 'package:om_health_care_app/app/modules/message/view/chat_page.dart';
 import 'package:om_health_care_app/app/modules/message/view/message_user_list.dart';
@@ -23,5 +24,6 @@ class AppPages {
     GetPage(name: AppRoutes.messageUserList, page: () => MessageUserList(),),
     GetPage(name: AppRoutes.chat, page: () => ChatPage(name: Get.arguments['name'], receiverId: Get.arguments['receiverId'],),),
     GetPage(name: AppRoutes.member, page: () => MembersPage(),),
+    GetPage(name: AppRoutes.appointment, page: () => AppointmentView(),),
   ];
 }

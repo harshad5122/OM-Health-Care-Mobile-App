@@ -217,7 +217,10 @@ class AddUserController extends GetxController {
           if (data["success"] == 1 || data["code"] == 200) {
             Get.snackbar("Success", data["msg"] ?? "User updated successfully",
                 snackPosition: SnackPosition.BOTTOM);
-            Get.offAllNamed("/member");
+            Get.back(result: true);
+            Get.toNamed("/member");
+            // Get.off(() => MembersPage());
+            // Get.back(result: true);
           } else {
             Get.snackbar("Error", data["msg"] ?? "Failed to update user",
                 snackPosition: SnackPosition.BOTTOM);
