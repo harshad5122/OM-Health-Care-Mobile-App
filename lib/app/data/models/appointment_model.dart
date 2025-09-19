@@ -10,6 +10,8 @@ class AppointmentModel {
   TimeSlot? timeSlot;
   String? visitType;
   String? appointmentId;
+  String? status;
+  String? id;
 
   AppointmentModel({
     this.patientId,
@@ -19,6 +21,8 @@ class AppointmentModel {
     this.timeSlot,
     this.visitType,
     this.appointmentId,
+    this.status,
+    this.id,
   });
 
   factory AppointmentModel.fromJson(Map<String, dynamic> json) => AppointmentModel(
@@ -31,6 +35,8 @@ class AppointmentModel {
         : null,
     visitType: json['visit_type'],
     appointmentId: json['id'],
+    status: json['status'],
+    id: json['_id'],
   );
 
   Map<String, dynamic> toJson() => {
@@ -41,6 +47,8 @@ class AppointmentModel {
     'time_slot': timeSlot?.toJson(),
     'visit_type': visitType,
     if (appointmentId != null) '_id': appointmentId, // Use '_id' for update/delete if your API expects it
+    if (status != null) 'status': status,
+    if (id != null) '_id': id, // When sending, use '_id' if API expects it
 
   };
 }

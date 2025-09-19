@@ -41,17 +41,6 @@ class CustomDrawer extends StatelessWidget {
             ),
           ),
 
-          // Menu Section
-          // _buildMenuItem(Icons.dashboard, "Dashboard", () {
-          //   Get.back();
-          // }),
-          // _buildMenuItem(Icons.person, "Profile", () {Get.toNamed(AppRoutes.profile);}),
-          // _buildMenuItem(Icons.message, "Messages", () {Get.toNamed(AppRoutes.messageUserList);}),
-          // _buildMenuItem(Icons.local_hospital, "Add Doctor", () {Get.toNamed(AppRoutes.addDoctor);}),
-          // _buildMenuItem(Icons.group_add, "Add User", () {Get.toNamed(AppRoutes.addUser);}),
-          // _buildMenuItem(Icons.people, "Member", () {Get.toNamed(AppRoutes.member);}),
-          // _buildMenuItem(Icons.event, "Book Appointment", () {Get.toNamed(AppRoutes.appointment);}),
-
           // Role-based menu
           ..._buildMenuForRole(Global.role),
 
@@ -122,10 +111,10 @@ class CustomDrawer extends StatelessWidget {
             Get.toNamed(AppRoutes.messageUserList);
           }),
           _buildMenuItem(Icons.outbond_outlined, "Leave Management", () {
-            // Get.toNamed(AppRoutes.leaveManagement);
+            Get.toNamed(AppRoutes.leave_management);
           }),
           _buildMenuItem(Icons.calendar_today, "Appointments", () {
-            Get.toNamed(AppRoutes.appointment);
+            Get.toNamed(AppRoutes.patient_appointment);
           }),
         ];
 

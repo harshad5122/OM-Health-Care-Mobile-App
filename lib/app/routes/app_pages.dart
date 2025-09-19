@@ -1,6 +1,8 @@
 import 'package:get/get.dart';
 import 'package:om_health_care_app/app/modules/appointment/views/appointment_view.dart';
+import 'package:om_health_care_app/app/modules/appointment/views/patient_appointment_page.dart';
 import 'package:om_health_care_app/app/modules/auth/views/change_password.dart';
+import 'package:om_health_care_app/app/modules/leave/view/leave_management_page.dart';
 import 'package:om_health_care_app/app/modules/message/view/chat_page.dart';
 import 'package:om_health_care_app/app/modules/message/view/message_user_list.dart';
 import 'package:om_health_care_app/app/screens/add_doctor.dart';
@@ -25,5 +27,7 @@ class AppPages {
     GetPage(name: AppRoutes.chat, page: () => ChatPage(name: Get.arguments['name'], receiverId: Get.arguments['receiverId'],),),
     GetPage(name: AppRoutes.member, page: () => MembersPage(),),
     GetPage(name: AppRoutes.appointment, page: () => AppointmentView(),),
+    GetPage(name: AppRoutes.patient_appointment, page: () => PatientAppointmentsPage(),),
+    GetPage(name: AppRoutes.leave_management, page: () => LeaveManagementPage(),),
   ];
 }

@@ -405,6 +405,13 @@
 
 
 
+
+
+
+
+
+
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart'; // For date formatting
@@ -510,10 +517,10 @@ class BookAppointmentCustomDialog extends StatelessWidget {
                           controller.clearAppointmentSelection();
                         }
                       },
-                      avatar: CircleAvatar(
-                        backgroundColor: Colors.redAccent,
-                        child: Text(event.status[0]),
-                      ),
+                      // avatar: CircleAvatar(
+                      //   backgroundColor: Colors.redAccent,
+                      //   child: Text(event.status[0]),
+                      // ),
                     );
                   }).toList(),
                 ),
