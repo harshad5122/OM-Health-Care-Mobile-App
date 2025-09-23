@@ -25,6 +25,10 @@ class LeaveController extends GetxController {
   RxList<LeaveRecord> leaveRecords = <LeaveRecord>[].obs;
   RxBool isFetchingRecords = false.obs;
 
+  RxBool isEditMode = false.obs;
+  Rx<LeaveRecord?> editingLeave = Rx<LeaveRecord?>(null);
+  RxString selectedStatus = 'PENDING'.obs;
+
   @override
   void onInit() {
     super.onInit();
@@ -163,6 +167,78 @@ class LeaveController extends GetxController {
     }
   }
 
-// You can add methods for canceling/editing leave if needed,
-// though the API currently doesn't provide endpoints for those actions.
+  Future<void> updateLeave(String leaveId) async {
+    if (startDate.value == null || endDate.value == null || reasonController.text.isEmpty) {
+      Get.snackbar('Error', 'Please fill all required fields.');
+      return;
+    }
+
+    isLoading.value = true;
+    try {
+      final token = await TokenStorage.getToken();
+      final response = await http.put(
+        Uri.parse("${ApiConstants.UPDATE_LEAVE}/$leaveId"),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          "start_date": DateFormat('yyyy-MM-dd').format(startDate.value!),
+          "end_date": DateFormat('yyyy-MM-dd').format(endDate.value!),
+          "leave_type": selectedLeaveType.value,
+          "reason": reasonController.text,
+          "status": selectedStatus.value, // include status in update
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        Get.snackbar('Success', 'Leave updated successfully.');
+        _resetApplyLeaveForm();
+        fetchLeaveRecords();
+        isEditMode.value = false;
+      } else {
+        Get.snackbar('Error', 'Failed to update leave. Status: ${response.statusCode}');
+      }
+    } catch (e) {
+      Get.snackbar('Error', 'An error occurred: $e');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> deleteLeave(String leaveId) async {
+    isLoading.value = true;
+    try {
+      final token = await TokenStorage.getToken();
+      final response = await http.delete(
+        Uri.parse("${ApiConstants.DELETE_LEAVE}/$leaveId"),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        Get.snackbar('Success', 'Leave deleted successfully.');
+        fetchLeaveRecords();
+      } else {
+        Get.snackbar('Error', 'Failed to delete leave. Status: ${response.statusCode}');
+      }
+    } catch (e) {
+      Get.snackbar('Error', 'An error occurred: $e');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  void startEditing(LeaveRecord record) {
+    isEditMode.value = true;
+    editingLeave.value = record;
+    startDate.value = record.startDate;
+    endDate.value = record.endDate;
+    selectedLeaveType.value = record.leaveType;
+    reasonController.text = record.reason;
+    selectedStatus.value = record.status; // populate status
+  }
+
 }

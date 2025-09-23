@@ -1,5 +1,5 @@
 class ApiConstants {
-  static const String BASE_URL =  "https://bafb67dcd868.ngrok-free.app/api";
+  static const String BASE_URL =  "https://5f1cde68061f.ngrok-free.app/api";
 
   // AUTH ROUTES
   static const String SIGNUP = "$BASE_URL/auth/signup";
@@ -45,6 +45,8 @@ class ApiConstants {
   static const String CREATE_LEAVE = "$BASE_URL/create-leave";
   static const String GET_LEAVE = "$BASE_URL/get-leave";
   static const String UPDATE_LEAVE_STATUS = "$BASE_URL/update-leave";
+  static const String UPDATE_LEAVE = "$BASE_URL/update-leave";
+  static const String DELETE_LEAVE = "$BASE_URL/delete-leave";
 
 
   static const String GET_NOTIFICATION = "$BASE_URL/notification";

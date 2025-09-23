@@ -4,7 +4,6 @@ import 'package:intl/intl.dart';
 
 import '../controller/leave_controller.dart';
 
-
 class LeaveManagementPage extends StatelessWidget {
   final LeaveController _leaveController = Get.put(LeaveController());
 
@@ -15,7 +14,8 @@ class LeaveManagementPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Leave Management'),
-        backgroundColor: Theme.of(context).primaryColor, // Use your app's primary color
+        backgroundColor:
+            Theme.of(context).primaryColor, // Use your app's primary color
         foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
@@ -42,11 +42,12 @@ class LeaveManagementPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Apply Leave',
+              // 'Apply Leave',
+              _leaveController.isEditMode.value ? 'Edit Leave' : 'Apply Leave',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).primaryColor,
-              ),
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).primaryColor,
+                  ),
             ),
             const SizedBox(height: 20),
             // Start Date
@@ -72,20 +73,60 @@ class LeaveManagementPage extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Obx(
-                  () => DropdownButtonFormField<String>(
+              () => DropdownButtonFormField<String>(
                 value: _leaveController.selectedLeaveType.value,
                 decoration: InputDecoration(
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 ),
                 items: const [
                   DropdownMenuItem(value: 'FULL_DAY', child: Text('Full Day')),
-                  DropdownMenuItem(value: 'FIRST_HALF', child: Text('First Half')),
-                  DropdownMenuItem(value: 'SECOND_HALF', child: Text('Second Half')),
+                  DropdownMenuItem(
+                      value: 'FIRST_HALF', child: Text('First Half')),
+                  DropdownMenuItem(
+                      value: 'SECOND_HALF', child: Text('Second Half')),
                 ],
                 onChanged: _leaveController.setSelectedLeaveType,
               ),
             ),
+            const SizedBox(height: 15),
+
+            Obx(() {
+              if (_leaveController.isEditMode.value) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 15),
+                    Text('Leave Status',
+                        style: Theme.of(context).textTheme.titleMedium),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<String>(
+                      value: _leaveController.selectedStatus.value,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8)),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
+                      ),
+                      items: const [
+                        DropdownMenuItem(
+                            value: 'PENDING', child: Text('Pending')),
+                        DropdownMenuItem(
+                            value: 'CONFIRMED', child: Text('Approved')),
+                        DropdownMenuItem(value: 'CANCELLED', child: Text('Cancelled')),
+                      ],
+                      onChanged: (val) {
+                        if (val != null)
+                          _leaveController.selectedStatus.value = val;
+                      },
+                    ),
+                  ],
+                );
+              }
+              return const SizedBox.shrink();
+            }),
             const SizedBox(height: 15),
             // Reason for Leave
             Text(
@@ -97,7 +138,8 @@ class LeaveManagementPage extends StatelessWidget {
               controller: _leaveController.reasonController,
               decoration: InputDecoration(
                 hintText: 'Enter your reason...',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                 contentPadding: const EdgeInsets.all(12),
               ),
               maxLines: 3,
@@ -117,31 +159,44 @@ class LeaveManagementPage extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.grey.shade300,
                     foregroundColor: Colors.black87,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8)),
                   ),
                   child: const Text('Cancel'),
                 ),
                 const SizedBox(width: 10),
                 Obx(
-                      () => ElevatedButton(
-                    onPressed: _leaveController.isLoading.value ? null : _leaveController.applyLeave,
+                  () => ElevatedButton(
+                    onPressed: _leaveController.isLoading.value
+                        ? null
+                        :  () {
+                      if (_leaveController.isEditMode.value) {
+                        _leaveController.updateLeave(_leaveController.editingLeave.value!.id);
+                      } else {
+                        _leaveController.applyLeave();
+                      }
+                    },
+                    // _leaveController.applyLeave,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(context).primaryColor,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)),
                     ),
                     child: _leaveController.isLoading.value
                         ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
-                    )
-                        : const Text('Apply Leave'),
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Text(_leaveController.isEditMode.value ? 'Update Leave' : 'Apply Leave'),
                   ),
                 ),
               ],
@@ -153,11 +208,11 @@ class LeaveManagementPage extends StatelessWidget {
   }
 
   Widget _buildDateSelectionField(
-      BuildContext context, {
-        required String label,
-        required Rx<DateTime?> selectedDate,
-        required VoidCallback onTap,
-      }) {
+    BuildContext context, {
+    required String label,
+    required Rx<DateTime?> selectedDate,
+    required VoidCallback onTap,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -178,12 +233,14 @@ class LeaveManagementPage extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Obx(
-                      () => Text(
+                  () => Text(
                     selectedDate.value == null
                         ? 'MM/DD/YYYY'
                         : DateFormat('MM/dd/yyyy').format(selectedDate.value!),
                     style: TextStyle(
-                      color: selectedDate.value == null ? Colors.grey[600] : Colors.black,
+                      color: selectedDate.value == null
+                          ? Colors.grey[600]
+                          : Colors.black,
                       fontSize: 16,
                     ),
                   ),
@@ -200,7 +257,6 @@ class LeaveManagementPage extends StatelessWidget {
       ],
     );
   }
-
 
   Widget _buildLeaveRecordsSection() {
     return Card(
@@ -233,21 +289,36 @@ class LeaveManagementPage extends StatelessWidget {
                   dataRowMinHeight: 45, // Set minimum row height
                   dataRowMaxHeight: 60, // Set maximum row height
                   headingRowColor: MaterialStateProperty.resolveWith<Color?>(
-                        (Set<MaterialState> states) => Get.theme.primaryColor.withOpacity(0.1),
+                    (Set<MaterialState> states) =>
+                        Get.theme.primaryColor.withOpacity(0.1),
                   ),
                   columns: const [
-                    DataColumn(label: Text('Start Date', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('End Date', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Leave Type', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Reason', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Action', style: TextStyle(fontWeight: FontWeight.bold))),
+                    DataColumn(
+                        label: Text('Start Date',
+                            style: TextStyle(fontWeight: FontWeight.bold))),
+                    DataColumn(
+                        label: Text('End Date',
+                            style: TextStyle(fontWeight: FontWeight.bold))),
+                    DataColumn(
+                        label: Text('Leave Type',
+                            style: TextStyle(fontWeight: FontWeight.bold))),
+                    DataColumn(
+                        label: Text('Reason',
+                            style: TextStyle(fontWeight: FontWeight.bold))),
+                    DataColumn(
+                        label: Text('Status',
+                            style: TextStyle(fontWeight: FontWeight.bold))),
+                    DataColumn(
+                        label: Text('Action',
+                            style: TextStyle(fontWeight: FontWeight.bold))),
                   ],
                   rows: _leaveController.leaveRecords.map((record) {
                     return DataRow(
                       cells: [
-                        DataCell(Text(DateFormat('MM/dd/yyyy').format(record.startDate))),
-                        DataCell(Text(DateFormat('MM/dd/yyyy').format(record.endDate))),
+                        DataCell(Text(
+                            DateFormat('MM/dd/yyyy').format(record.startDate))),
+                        DataCell(Text(
+                            DateFormat('MM/dd/yyyy').format(record.endDate))),
                         DataCell(Text(_formatLeaveType(record.leaveType))),
                         DataCell(
                           SizedBox(
@@ -260,11 +331,33 @@ class LeaveManagementPage extends StatelessWidget {
                           ),
                         ),
                         DataCell(_buildStatusChip(record.status)),
-                        const DataCell(
-                          IconButton(
-                            icon: Icon(Icons.info_outline, size: 20),
-                            onPressed: null, // No action defined in API for now
-                            tooltip: 'View Details',
+                        DataCell(
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.edit, size: 20, color: Colors.green),
+                                onPressed: () {
+                                  _leaveController.startEditing(record);
+                                },
+                                tooltip: 'Edit Leave',
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete, size: 20, color: Colors.redAccent),
+                                onPressed: () {
+                                  Get.defaultDialog(
+                                    title: "Delete Leave",
+                                    middleText: "Are you sure you want to delete this leave?",
+                                    onConfirm: () {
+                                      _leaveController.deleteLeave(record.id);
+                                      Get.back();
+                                    },
+                                    onCancel: () {},
+                                  );
+                                },
+                                tooltip: 'Delete Leave',
+                              ),
+                            ],
                           ),
                         ),
                       ],

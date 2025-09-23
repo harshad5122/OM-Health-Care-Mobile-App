@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:calendar_view/calendar_view.dart';
 import 'package:flutter/material.dart';
 
 class AppointmentModel {
@@ -106,9 +107,9 @@ class Event {
   final String end;
   final String type;
   final String status;
-  final String id;
-  final String visitType;
-  final String patientId;
+  final String? id;
+  final String? visitType;
+  final String? patientId;
 
   Event({
     required this.title,
@@ -116,21 +117,21 @@ class Event {
     required this.end,
     required this.type,
     required this.status,
-    required this.id,
-    required this.visitType,
-    required this.patientId,
+    this.id,
+    this.visitType,
+    this.patientId,
   });
 
   factory Event.fromJson(Map<String, dynamic> json) {
     return Event(
-      title: json['title'],
-      start: json['start'],
-      end: json['end'],
-      type: json['type'],
-      status: json['status'],
-      id: json['id'],
-      visitType: json['visit_type'],
-      patientId: json['patient_id'],
+      title: json['title'] as String,
+      start: json['start'] as String,
+      end: json['end'] as String,
+      type: json['type'] as String,
+      status: json['status'] as String,
+      id: json['id'] as String?,
+      visitType: json['visit_type'] as String?,
+      patientId: json['patient_id'] as String?,
     );
   }
 }
@@ -162,28 +163,59 @@ class DaySlots {
 }
 
 // Class to hold appointment data for Syncfusion Calendar
-class CalendarAppointment {
+// class CalendarAppointment {
+//   CalendarAppointment({
+//     required this.eventName,
+//     required this.from,
+//     required this.to,
+//     this.background = Colors.blue, // Default color for appointments
+//     this.isAllDay = false,
+//     this.appointmentId,
+//     this.patientId,
+//     this.visitType,
+//     this.patientName,
+//     this.status,
+//   });
+//
+//   final String eventName;
+//   final DateTime from;
+//   final DateTime to;
+//   final Color background;
+//   final bool isAllDay;
+//   final String? appointmentId;
+//   final String? patientId;
+//   final String? visitType;
+//   final String? patientName;
+//   final String? status;
+// }
+
+class CalendarAppointment extends CalendarEventData {
+  // Constructor adapted for CalendarEventData
   CalendarAppointment({
-    required this.eventName,
-    required this.from,
-    required this.to,
-    this.background = Colors.blue, // Default color for appointments
-    this.isAllDay = false,
+    required super.date, // date from CalendarEventData, represents the start date
+    required super.startTime, // startTime from CalendarEventData
+    required super.endTime, // endTime from CalendarEventData
+    super.endDate, // endDate from CalendarEventData, for multi-day events
+    super.title = '', // title from CalendarEventData
+    super.description = '', // description from CalendarEventData
+    super.color = Colors.blue, // color from CalendarEventData
     this.appointmentId,
     this.patientId,
     this.visitType,
     this.patientName,
     this.status,
-  });
+    this.type,
+  }) : super(
+    // Pass properties to super constructor
+    // The `title` property of CalendarEventData will be used for eventName
+    // `date` will be the event start date
+    // `startTime` and `endTime` will represent the time component
+  );
 
-  final String eventName;
-  final DateTime from;
-  final DateTime to;
-  final Color background;
-  final bool isAllDay;
   final String? appointmentId;
   final String? patientId;
   final String? visitType;
   final String? patientName;
   final String? status;
+  final String? type;
 }

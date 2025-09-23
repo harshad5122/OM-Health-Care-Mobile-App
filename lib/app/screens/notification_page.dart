@@ -260,7 +260,7 @@ class NotificationPage extends StatelessWidget {
     String successMessage = notif.type == "APPOINTMENT_REQUEST"
         ? "Doctor accepted the appointment"
         : "Admin accepted the leave request";
-    String successStatus = notif.type == "APPOINTMENT_REQUEST" ? "CONFIRMED" : "APPROVED";
+    String successStatus = notif.type == "APPOINTMENT_REQUEST" ? "CONFIRMED" : "CONFIRMED";
 
 
     Get.defaultDialog(
@@ -330,7 +330,7 @@ class NotificationPage extends StatelessWidget {
     String defaultMessage = notif.type == "APPOINTMENT_REQUEST"
         ? "Doctor declined the appointment"
         : "Admin rejected the leave request";
-    String declineStatus = notif.type == "APPOINTMENT_REQUEST" ? "CANCELLED" : "REJECTED";
+    String declineStatus = notif.type == "APPOINTMENT_REQUEST" ? "CANCELLED" : "CANCELLED";
 
 
     final TextEditingController reasonController = TextEditingController();
@@ -357,7 +357,7 @@ class NotificationPage extends StatelessWidget {
             TextField(
               controller: reasonController,
               decoration: InputDecoration(
-                labelText: "Reason for ${notif.type == "APPOINTMENT_REQUEST" ? "cancellation" : "rejection"}",
+                labelText: "Reason for ${notif.type == "APPOINTMENT_REQUEST" ? "CANCELLED" : "CANCELLED"}",
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),

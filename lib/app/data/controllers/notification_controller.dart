@@ -127,7 +127,7 @@ class Notificationcontroller extends GetxController {
 
       final data = jsonDecode(response.body);
       print('response code ::${response.statusCode}');
-      if (response.statusCode == 200 && data["success"] == true) {
+      if (response.statusCode == 200) {
         Get.back();
         Get.snackbar("Success", "Appointment $status successfully");
         print('response: ${response.body}');
@@ -177,7 +177,7 @@ class Notificationcontroller extends GetxController {
 
       final data = jsonDecode(response.body);
       print('response code ::${response.statusCode}');
-      if (response.statusCode == 200 && data["success"] == 1) { // Changed data["success"] == true to 1
+      if (response.statusCode == 200) { // Changed data["success"] == true to 1
         Get.back();
         Get.snackbar("Success", "Leave ${status.toLowerCase()} successfully"); // Dynamic status text
         print('response: ${response.body}');
