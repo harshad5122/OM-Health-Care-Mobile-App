@@ -510,6 +510,7 @@ import 'download_controller.dart';
 
 class ChatController extends GetxController {
   final String? receiverId;
+  final bool? isBroadcast;
   // final String? roomId;
   final RxList<MessageModel> messages = <MessageModel>[].obs;
   // final RxList<GroupMessageModel> groupMessages = <GroupMessageModel>[].obs;
@@ -537,7 +538,7 @@ class ChatController extends GetxController {
   final unreadIndex = (-1).obs;
   final unreadMarkerShown = true.obs;
 
-  ChatController({this.receiverId});
+  ChatController({this.receiverId, this.isBroadcast});
 
   @override
   void onInit() {
@@ -545,10 +546,19 @@ class ChatController extends GetxController {
     // if(roomId != null){
     //   fetchGroupMessages(roomId);
     // }else{
-    fetchMessage(receiverId);
+    if (isBroadcast == true) {
+      fetchMessage(null, broadcastId: receiverId);
+    } else {
+      fetchMessage(receiverId);
+    }
+    // fetchMessage(receiverId);
     // }
     initSocket(userId: Global.userId??'');
     _registerSocketListeners();
+    socketService.listenForBroadcastAck((data) {
+      print("📢 Broadcast ACK received: $data");
+      Get.snackbar("Broadcast", data["message"] ?? "Broadcast sent!");
+    });
   }
 
   @override
@@ -575,17 +585,6 @@ class ChatController extends GetxController {
         .length;
   }
 
-  // void setUnreadMarker() {
-  //   if (!unreadMarkerShown.value) return;
-  //
-  //   final index = messages.indexWhere(
-  //         (msg) => msg.isRead == false && msg.receiverId == Global.userId,
-  //   );
-  //
-  //   if (index != -1) {
-  //     unreadIndex.value = index;
-  //   }
-  // }
 
   void setUnreadMarker() {
     if (!unreadMarkerShown.value) return;
@@ -837,10 +836,49 @@ class ChatController extends GetxController {
   }
 
 
+  void sendBroadcast(String broadcastId, MessageType type) {
+    if (messageText.value.isNotEmpty && socketService.socket != null) {
+      final message = MessageModel(
+        senderId: Global.userId!,
+        broadcastId: broadcastId,
+        message: messageText.value,
+        attachmentId: [],
+        messageType: type.toString().split('.').last,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        messageStatus: 'sent',
+        replyTo: replyMessage.value,
+        senderDetails: [
+          UserDetails(
+            id: Global.userId!,
+            firstname: Global.userFirstname!,
+            lastname: Global.userLastname!,
+            email: Global.email!,
+          )
+        ],
+        dateTime: selectedMeetingTime.value,
+        replyToDetails: replyMessage.value,
+      );
+
+      messages.insert(0, message); // local UI update
+      _scrollToBottom();
+      update();
+
+      socketService.sendBroadcastMessage(Global.userId!, broadcastId, messageText.value);
+
+      selectedMeetingTime.value = null;
+      chatController.fetchAdminList();
+      messageText.value = "";
+      clearReplyToMessage();
+    }
+  }
+
+
+
   Future<UserDetails?> fetchUserDetails(String receiverId) async {
     String? token = await TokenStorage.getToken();
     // final url = '${ApiConstants.GET_USER_DETAILS}/$receiverId';
-    final url = '${ApiConstants.GET_USER_PROFILE}/$receiverId';
+    final url = '${ApiConstants.GET_USER_BY_ID}/$receiverId';
     try {
       final response = await http.get(
         Uri.parse(url),
@@ -863,9 +901,19 @@ class ChatController extends GetxController {
   }
 
 
-  Future<void> fetchMessage(String? receiverId) async {
+  Future<void> fetchMessage(String? receiverId, {String? broadcastId}) async {
+
     String? token = await TokenStorage.getToken();
-    final url = '${ApiConstants.GET_MESSAGE_LIST}?user_id=$receiverId';
+    // final url = '${ApiConstants.GET_MESSAGE_LIST}?user_id=$receiverId';
+    String url;
+    if (broadcastId != null && broadcastId.isNotEmpty) {
+      url = '${ApiConstants.GET_MESSAGE_LIST}?broadcast_id=$broadcastId';
+    } else if (receiverId != null && receiverId.isNotEmpty) {
+      url = '${ApiConstants.GET_MESSAGE_LIST}?user_id=$receiverId';
+    } else {
+      print("❌ No receiverId or broadcastId provided");
+      return;
+    }
     print('fetch message url : ${url}');
     try {
       final response = await http.get(

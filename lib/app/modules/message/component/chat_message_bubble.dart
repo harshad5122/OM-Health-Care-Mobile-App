@@ -715,6 +715,7 @@ class _ChatBubbleState extends State<ChatBubble> {
     final bool isEdited = msg.isEdited ?? false; // Get the edited status
     final replyMsg = controller.replyMessage.value;
 
+
     return Align(
       // Align messages based on sender (me = right, other = left)
       alignment: widget.isMe ? Alignment.centerRight : Alignment.centerLeft,

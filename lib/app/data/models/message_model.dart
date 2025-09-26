@@ -25,6 +25,8 @@ class MessageModel {
   final String? localFilePath;
   final bool isEdited;
   final bool isRead;
+  final String? broadcastId;
+
 
   MessageModel({
     this.messageId,
@@ -50,6 +52,7 @@ class MessageModel {
     this.localFilePath,
     this.isEdited = false,
     this.isRead = false,
+    this.broadcastId,
   }) : createdAt = createdAt is int
       ? DateTime.fromMillisecondsSinceEpoch(createdAt)
       : createdAt is String
@@ -62,6 +65,7 @@ class MessageModel {
       messageId: json["_id"] ?? '',
       senderId: json["sender_id"] ?? '',
       receiverId: json["receiver_id"] ??'',
+      broadcastId: json["broadcast_id"] ?? '',
       message: json["message"] ?? '',
 
       attachmentId: json["attechment_id"] is String
@@ -115,6 +119,7 @@ class MessageModel {
       "_id": messageId,
       "sender_id": senderId,
       "receiver_id": receiverId,
+      "broadcast_id": broadcastId,
       "message": message,
       "attechment_id": attachmentId,
       // "attechment_details": attachmentDetails?.toJson(),

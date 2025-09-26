@@ -403,9 +403,9 @@ import 'audio_player.dart';
 
 class ChatInputField extends StatefulWidget {
   final String? receiverId;
-  final String? roomId;
+  final String? broadcastId;
 
-  ChatInputField({super.key, this.receiverId, this.roomId});
+  ChatInputField({super.key, this.receiverId, this.broadcastId});
 
   @override
   State<ChatInputField> createState() => _ChatInputFieldState();
@@ -452,12 +452,21 @@ class _ChatInputFieldState extends State<ChatInputField> {
       chatController.clearEditingMessage(); // Clear editing state
     } else {
       // Otherwise, send a new message
-      if (widget.receiverId != null) {
+      if (widget.receiverId != null && !(chatController.isBroadcast ?? false)) {
         chatController.sendMessage(
           widget.receiverId!,
           MessageType.text,
         );
-        chatController.fetchMessage(widget.receiverId!);
+        // chatController.fetchMessage(widget.receiverId!);
+        if (chatController.isBroadcast == true) {
+          chatController.fetchMessage(null, broadcastId: widget.receiverId!);
+        } else {
+          chatController.fetchMessage(widget.receiverId!);
+        }
+
+      } else if (chatController.isBroadcast == true && widget.broadcastId != null) {
+        // Broadcast message
+        chatController.sendBroadcast(widget.broadcastId!, MessageType.text);
       }
     }
     chatController.textController.clear();
@@ -798,7 +807,6 @@ class _ChatInputFieldState extends State<ChatInputField> {
       return null;
     }
   }
-
 
   Future<List<File>> _pickMultipleImages() async {
     final List<XFile>? pickedFiles = await ImagePicker().pickMultiImage();

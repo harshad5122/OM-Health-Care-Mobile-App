@@ -1,5 +1,5 @@
 class ApiConstants {
-  static const String BASE_URL =  "https://5f1cde68061f.ngrok-free.app/api";
+  static const String BASE_URL =  "https://6f4ce464101f.ngrok-free.app/api";
 
   // AUTH ROUTES
   static const String SIGNUP = "$BASE_URL/auth/signup";
@@ -26,6 +26,7 @@ class ApiConstants {
   static const String GET_MESSAGE_LIST = "$BASE_URL/message/list";
   static const String UPLOAD_FILE = "$BASE_URL/file/upload";
   static const String GET_ALL_CHAT_USER = "$BASE_URL/chat/users";
+  static const String GET_BROADCASTS = "$BASE_URL/broadcasts";
 
   //USER LIST ROUTES
   static const String GET_USER_LIST = "$BASE_URL/user/list";

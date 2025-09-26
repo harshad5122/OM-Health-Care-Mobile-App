@@ -114,6 +114,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:om_health_care_app/app/modules/message/controller/chat_contoller.dart';
+import 'package:om_health_care_app/app/modules/message/view/recipient_list.dart';
 import 'package:om_health_care_app/app/socket/socket_service.dart';
 
 import '../../../global/global.dart';
@@ -123,9 +124,10 @@ import '../component/chat_message_bubble.dart';
 class ChatPage extends StatefulWidget{
   final String? receiverId;
   final String name;
+  final bool? isBroadcast;
 
   // No longer initialize controller in constructor, will be done in initState
-  ChatPage({Key? key, this.receiverId, required this.name}) : super(key: key);
+  ChatPage({Key? key, this.receiverId, required this.name, this.isBroadcast}) : super(key: key);
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -138,7 +140,7 @@ class _ChatPageState extends State<ChatPage> {
   @override
   void initState() {
     super.initState();
-    chatController = Get.put(ChatController(receiverId: widget.receiverId));
+    chatController = Get.put(ChatController(receiverId: widget.receiverId,  isBroadcast: widget.isBroadcast));
     final socketService = Get.find<SocketService>();
     socketService.emitUserOnline(Global.userId??'');
     // Once messages are loaded, calculate unread position
@@ -164,6 +166,19 @@ class _ChatPageState extends State<ChatPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.name),
+        actions: [
+          if (widget.isBroadcast == true)
+            IconButton(
+              icon: const Icon(Icons.group),
+              onPressed: () {
+                // open RecipientsListPage
+                Get.to(() => RecipientsListPage(
+                  broadcastId: widget.receiverId ?? "",
+                  broadcastTitle: widget.name,
+                ));
+              },
+            ),
+        ],
       ),
       body: Column(
         children: [
@@ -176,6 +191,7 @@ class _ChatPageState extends State<ChatPage> {
                 itemBuilder: (context, index) {
                   var message = chatController.messages[index];
                   bool isMe = message.senderId == Global.userId;
+
 
                   DateTime messageDate = message.createdAt;
                   // String formattedDate = DateFormat('dd MMMM yyyy').format(messageDate);
@@ -249,7 +265,9 @@ class _ChatPageState extends State<ChatPage> {
             }),
           ),
           ChatInputField(
-            receiverId: widget.receiverId??'',
+            // receiverId: widget.receiverId??'',
+            receiverId: widget.isBroadcast == true ? null : widget.receiverId, // only for normal chat
+            broadcastId: widget.isBroadcast == true ? widget.receiverId : null, // pass receiverId as broadcastId in broadcast mode
           ),
         ],
       ),

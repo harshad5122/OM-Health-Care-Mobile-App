@@ -4,6 +4,7 @@ import 'package:om_health_care_app/app/modules/appointment/views/patient_appoint
 import 'package:om_health_care_app/app/modules/auth/views/change_password.dart';
 import 'package:om_health_care_app/app/modules/leave/view/leave_management_page.dart';
 import 'package:om_health_care_app/app/modules/message/view/chat_page.dart';
+import 'package:om_health_care_app/app/modules/message/view/create_broadcast_page.dart';
 import 'package:om_health_care_app/app/modules/message/view/message_user_list.dart';
 import 'package:om_health_care_app/app/screens/add_doctor.dart';
 import 'package:om_health_care_app/app/screens/add_user.dart';
@@ -24,10 +25,11 @@ class AppPages {
     GetPage(name: AppRoutes.addUser, page: () => AddUserPage(),),
     GetPage(name: AppRoutes.changePassword, page: () => ChangePasswordView(),),
     GetPage(name: AppRoutes.messageUserList, page: () => MessageUserList(),),
-    GetPage(name: AppRoutes.chat, page: () => ChatPage(name: Get.arguments['name'], receiverId: Get.arguments['receiverId'],),),
+    GetPage(name: AppRoutes.chat, page: () => ChatPage(name: Get.arguments['name'], receiverId: Get.arguments['receiverId'],isBroadcast: Get.arguments['isBroadcast'] ?? false),),
     GetPage(name: AppRoutes.member, page: () => MembersPage(),),
     GetPage(name: AppRoutes.appointment, page: () => AppointmentView(),),
     GetPage(name: AppRoutes.patient_appointment, page: () => PatientAppointmentsPage(),),
     GetPage(name: AppRoutes.leave_management, page: () => LeaveManagementPage(),),
+    GetPage(name: AppRoutes.create_broadcast, page: () => CreateBroadcastPage(),),
   ];
 }

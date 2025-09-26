@@ -1,8 +1,5 @@
 import 'package:get/get.dart';
-// import 'package:orbitwork/models/group_message_model.dart';
-
 import 'package:socket_io_client/socket_io_client.dart' as IO;
-
 import '../data/models/message_model.dart';
 
 class SocketService extends GetxService {
@@ -11,7 +8,7 @@ class SocketService extends GetxService {
   final RxBool isConnected = false.obs;
 
   Future<void> connectSocket(String userId) async {
-    socket = IO.io('https://5f1cde68061f.ngrok-free.app', <String, dynamic>{
+    socket = IO.io('https://6f4ce464101f.ngrok-free.app', <String, dynamic>{
       'transports': ['websocket'],
       'autoConnect': false,
     });
@@ -117,10 +114,88 @@ class SocketService extends GetxService {
     });
   }
 
+  void createBroadcast(String adminId, String title, List<String> recipients) {
+    final data = {
+      "admin_id": adminId,
+      "title": title,
+      "recipients": recipients,
+    };
+
+    print("Emitting create_broadcast: $data");
+    socket?.emit("create_broadcast", data);
+  }
+
+  void editBroadcast(
+      String adminId, String broadcastId, String title, List<String> recipients) {
+    final data = {
+      "admin_id": adminId,
+      "broadcast_id": broadcastId,
+      "title": title,
+      "recipients": recipients,
+    };
+    print("Emitting edit_broadcast: $data");
+    socket?.emit("edit_broadcast", data);
+  }
+
+  // Send message to a broadcast
+  void sendBroadcastMessage(String adminId, String broadcastId, String message) {
+    final data = {
+      "sender_id": adminId,
+      "broadcast_id": broadcastId,
+      "message": message,
+      "attachments": []
+    };
+    print("📤 Emitting broadcast_message: $data");
+    socket?.emit("broadcast_message", data);
+  }
+  // void sendBroadcastMessage(String adminId, String broadcastId, String message) {
+  //   socket?.emit("broadcast_message", {
+  //     "sender_id": adminId,
+  //     "broadcast_id": broadcastId,
+  //     "message": message,
+  //     "attachments": []
+  //   });
+  // }
+
 
   //=========================
   // Event Listeners
   // =========================
+
+
+  void listenForBroadcastCreated(Function(Map<String, dynamic>) onCreated) {
+    socket?.on("broadcast_created", (data) {
+      print("📢 Broadcast created: $data");
+      if (data is Map) {
+        onCreated(Map<String, dynamic>.from(data));
+      }
+    });
+
+    socket?.on("error", (err) {
+      print("❌ Broadcast error: $err");
+    });
+  }
+
+  void listenForBroadcastUpdated(Function(Map<String, dynamic>) onUpdated) {
+    socket?.on("broadcast_updated", (data) {
+      print("✅ Broadcast updated: $data");
+      if (data is Map) onUpdated(Map<String, dynamic>.from(data));
+    });
+
+    socket?.on("error", (err) {
+      print("❌ Broadcast update error: $err");
+    });
+  }
+
+  void listenForBroadcastAck(Function(Map<String, dynamic>) onAck) {
+    socket?.on("broadcast_ack", (data) {
+      print("✅ Broadcast ack: $data");
+      if (data is Map) {
+        onAck(Map<String, dynamic>.from(data));
+      }
+    });
+  }
+
 
   void listenForUpdatedMessages(Function(Map data) onUpdated) {
     socket?.on('message_updated', (data) {
@@ -181,6 +256,21 @@ class SocketService extends GetxService {
     });
   }
 
+  // Listen for Broadcast Acknowledgment
+  // void listenForBroadcastAck(Function(Map<String, dynamic> data) onAck) {
+  //   socket?.on('broadcast_ack', (data) {
+  //     print('📢 Broadcast Acknowledged: $data');
+  //     if (data is Map<String, dynamic>) {
+  //       onAck(data);
+  //     } else if (data is Map) {
+  //       onAck(Map<String, dynamic>.from(data));
+  //     } else {
+  //       print("⚠️ Invalid data type for broadcast_ack: $data");
+  //     }
+  //   });
+  // }
+
+
 
   void listenToGroupMessages(Function(Map<String, dynamic>) onMessageReceived) {
     socket?.on('chat_message', (data) {
@@ -232,9 +322,13 @@ class SocketService extends GetxService {
   void setupMessageListeners({
     //required Function(dynamic data) onNewMessage,
     required Function(dynamic data) onNotification,
+    // Function(Map<String, dynamic> data)? onBroadcastAck,
   }) {
     //socket?.on('new_message', onNewMessage);
     socket?.on('receiveNotification', onNotification);
+    // if (onBroadcastAck != null) {
+    //   socket?.on('broadcast_ack', onBroadcastAck);
+    // }
   }
 
 
@@ -246,15 +340,4 @@ class SocketService extends GetxService {
   void off(String event) {
     socket?.off(event);
   }
-
-// =========================
-//  Cleanup
-// =========================
-
-/// Disconnects from the socket server.
-// void disconnect() {
-//   socket?.emit('user_left_message_page', Global.userId);
-//   socket?.disconnect();
-//   socket?.destroy();
-// }
 }

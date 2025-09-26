@@ -14,12 +14,15 @@ class CustomTab extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     return Container(
       height: kToolbarHeight,
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
       child: TabBar(
         controller: controller,
+        isScrollable: true,
         indicator: BoxDecoration(), //  removes underline
         dividerColor: Colors.transparent, //  removes extra line
         splashFactory: NoSplash.splashFactory, //  remove ripple effect
+        tabAlignment: TabAlignment.start,
+        labelPadding: const EdgeInsets.symmetric(horizontal: 8),
         tabs: List.generate(
           tabs.length,
               (index) {
