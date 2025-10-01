@@ -273,6 +273,7 @@ class _MessageUserListState extends State<MessageUserList>
       appBar: AppBar(
           title: const Text("Message"),
         actions: [
+          if (Global.role == 2)
           PopupMenuButton<String>(
             onSelected: (value) {
               if (value == "create_broadcast") {

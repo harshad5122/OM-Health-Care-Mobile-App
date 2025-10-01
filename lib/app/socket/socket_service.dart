@@ -8,7 +8,7 @@ class SocketService extends GetxService {
   final RxBool isConnected = false.obs;
 
   Future<void> connectSocket(String userId) async {
-    socket = IO.io('https://6f4ce464101f.ngrok-free.app', <String, dynamic>{
+    socket = IO.io('https://bd3e4a5c285d.ngrok-free.app', <String, dynamic>{
       'transports': ['websocket'],
       'autoConnect': false,
     });
