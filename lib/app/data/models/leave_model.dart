@@ -1,9 +1,11 @@
 import 'dart:convert';
 
+// For GET request (List of leaves)
 LeaveModel leaveModelFromJson(String str) => LeaveModel.fromJson(json.decode(str));
+// For CREATE request (Single leave)
+CreateLeaveResponse createLeaveResponseFromJson(String str) => CreateLeaveResponse.fromJson(json.decode(str));
 
-String leaveModelToJson(LeaveModel data) => json.encode(data.toJson());
-
+// --- Model for fetching a LIST of leave records ---
 class LeaveModel {
   LeaveModel({
     required this.success,
@@ -23,15 +25,32 @@ class LeaveModel {
     msg: json["msg"],
     body: List<LeaveRecord>.from(json["body"].map((x) => LeaveRecord.fromJson(x))),
   );
-
-  Map<String, dynamic> toJson() => {
-    "success": success,
-    "code": code,
-    "msg": msg,
-    "body": List<dynamic>.from(body.map((x) => x.toJson())),
-  };
 }
 
+// --- Model for the response after CREATING a single leave ---
+class CreateLeaveResponse {
+  CreateLeaveResponse({
+    required this.success,
+    required this.code,
+    required this.msg,
+    required this.body,
+  });
+
+  int success;
+  int code;
+  String msg;
+  LeaveRecord body; // Body is a single object here
+
+  factory CreateLeaveResponse.fromJson(Map<String, dynamic> json) => CreateLeaveResponse(
+    success: json["success"],
+    code: json["code"],
+    msg: json["msg"],
+    body: LeaveRecord.fromJson(json["body"]),
+  );
+}
+
+
+// --- The shared LeaveRecord object used by both models ---
 class LeaveRecord {
   LeaveRecord({
     required this.id,
@@ -41,6 +60,8 @@ class LeaveRecord {
     required this.reason,
     required this.leaveType,
     required this.status,
+    this.adminId,    // Now optional
+    this.adminName,  // Now optional
     required this.createdAt,
     required this.updatedAt,
     required this.v,
@@ -53,6 +74,8 @@ class LeaveRecord {
   String reason;
   String leaveType;
   String status;
+  String? adminId;
+  String? adminName;
   DateTime createdAt;
   DateTime updatedAt;
   int v;
@@ -65,6 +88,8 @@ class LeaveRecord {
     reason: json["reason"],
     leaveType: json["leave_type"],
     status: json["status"],
+    adminId: json["admin_id"],
+    adminName: json["admin_name"],
     createdAt: DateTime.parse(json["createdAt"]),
     updatedAt: DateTime.parse(json["updatedAt"]),
     v: json["__v"],
@@ -78,91 +103,8 @@ class LeaveRecord {
     "reason": reason,
     "leave_type": leaveType,
     "status": status,
-    "createdAt": createdAt.toIso8601String(),
-    "updatedAt": updatedAt.toIso8601String(),
-    "__v": v,
-  };
-}
-
-// For create leave response
-CreateLeaveResponse createLeaveResponseFromJson(String str) => CreateLeaveResponse.fromJson(json.decode(str));
-
-String createLeaveResponseToJson(CreateLeaveResponse data) => json.encode(data.toJson());
-
-class CreateLeaveResponse {
-  CreateLeaveResponse({
-    required this.success,
-    required this.code,
-    required this.msg,
-    required this.body,
-  });
-
-  int success;
-  int code;
-  String msg;
-  CreatedLeaveBody body;
-
-  factory CreateLeaveResponse.fromJson(Map<String, dynamic> json) => CreateLeaveResponse(
-    success: json["success"],
-    code: json["code"],
-    msg: json["msg"],
-    body: CreatedLeaveBody.fromJson(json["body"]),
-  );
-
-  Map<String, dynamic> toJson() => {
-    "success": success,
-    "code": code,
-    "msg": msg,
-    "body": body.toJson(),
-  };
-}
-
-class CreatedLeaveBody {
-  CreatedLeaveBody({
-    required this.staffId,
-    required this.startDate,
-    required this.endDate,
-    required this.reason,
-    required this.leaveType,
-    required this.status,
-    required this.id,
-    required this.createdAt,
-    required this.updatedAt,
-    required this.v,
-  });
-
-  String staffId;
-  DateTime startDate;
-  DateTime endDate;
-  String reason;
-  String leaveType;
-  String status;
-  String id;
-  DateTime createdAt;
-  DateTime updatedAt;
-  int v;
-
-  factory CreatedLeaveBody.fromJson(Map<String, dynamic> json) => CreatedLeaveBody(
-    staffId: json["staff_id"],
-    startDate: DateTime.parse(json["start_date"]),
-    endDate: DateTime.parse(json["end_date"]),
-    reason: json["reason"],
-    leaveType: json["leave_type"],
-    status: json["status"],
-    id: json["_id"],
-    createdAt: DateTime.parse(json["createdAt"]),
-    updatedAt: DateTime.parse(json["updatedAt"]),
-    v: json["__v"],
-  );
-
-  Map<String, dynamic> toJson() => {
-    "staff_id": staffId,
-    "start_date": startDate.toIso8601String(),
-    "end_date": endDate.toIso8601String(),
-    "reason": reason,
-    "leave_type": leaveType,
-    "status": status,
-    "_id": id,
+    "admin_id": adminId,
+    "admin_name": adminName,
     "createdAt": createdAt.toIso8601String(),
     "updatedAt": updatedAt.toIso8601String(),
     "__v": v,

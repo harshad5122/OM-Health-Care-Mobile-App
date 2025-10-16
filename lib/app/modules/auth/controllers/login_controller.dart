@@ -73,8 +73,11 @@ class LoginController extends GetxController {
           Global.email = user["email"];
           Global.phone = user["phone"];
           Global.role = user["role"];
+          Global.staffId = user["staff_id"];
         }
+
         print('login user first name => ${Global.userFirstname}');
+        print('login staff id => ${Global.staffId}');
         print('login addedByAdmin => ${user["addedByAdmin"]}');
 
 

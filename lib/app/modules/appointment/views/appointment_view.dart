@@ -249,8 +249,6 @@ class AppointmentView extends StatelessWidget {
                                 alignment: Alignment.bottomRight,
                                 child: ElevatedButton(
                                   onPressed: () {
-                                    // Use Get.to to navigate to the BookingCalenderView
-                                    // and ensure the controller's selectedStaffId is set before navigation.
                                     controller.setSelectedStaff(doctor.id ?? "");
                                     Get.to(() => BookingCalenderView(doctor: doctor));
                                   },

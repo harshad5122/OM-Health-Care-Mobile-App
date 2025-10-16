@@ -4,6 +4,7 @@ class Global{
   static String? userLastname;
   static String? email;
   static String? phone;
+  static String? staffId;
 
   static int? role;
 }

@@ -6,6 +6,11 @@ import 'package:flutter/material.dart';
 class AppointmentModel {
   String? patientId;
   String? patientName;
+  String? patientPhone;
+  String? patientAddress;
+  String? patientCity;
+  String? patientState;
+  String? patientCountry;
   String? staffId;
   String? date;
   TimeSlot? timeSlot;
@@ -17,6 +22,11 @@ class AppointmentModel {
   AppointmentModel({
     this.patientId,
     this.patientName,
+    this.patientPhone,
+    this.patientAddress,
+    this.patientCity,
+    this.patientState,
+    this.patientCountry,
     this.staffId,
     this.date,
     this.timeSlot,
@@ -29,6 +39,11 @@ class AppointmentModel {
   factory AppointmentModel.fromJson(Map<String, dynamic> json) => AppointmentModel(
     patientId: json['patient_id'],
     patientName: json['patient_name'],
+    patientPhone: json['patient_phone'],
+    patientAddress: json['patient_address'],
+    patientCity: json['patient_city'],
+    patientState: json['patient_state'],
+    patientCountry: json['patient_country'],
     staffId: json['staff_id'],
     date: json['date'],
     timeSlot: json['time_slot'] != null
@@ -43,14 +58,17 @@ class AppointmentModel {
   Map<String, dynamic> toJson() => {
     'patient_id': patientId,
     'patient_name': patientName,
+    'patient_phone': patientPhone,
+    'patient_address': patientAddress,
+    'patient_city': patientCity,
+    'patient_state': patientState,
+    'patient_country': patientCountry,
     'staff_id': staffId,
     'date': date,
     'time_slot': timeSlot?.toJson(),
-    'visit_type': visitType,
-    if (appointmentId != null) '_id': appointmentId, // Use '_id' for update/delete if your API expects it
+    if (appointmentId != null) '_id': appointmentId,
     if (status != null) 'status': status,
-    if (id != null) '_id': id, // When sending, use '_id' if API expects it
-
+    if (id != null) '_id': id,
   };
 }
 
@@ -162,43 +180,16 @@ class DaySlots {
   }
 }
 
-// Class to hold appointment data for Syncfusion Calendar
-// class CalendarAppointment {
-//   CalendarAppointment({
-//     required this.eventName,
-//     required this.from,
-//     required this.to,
-//     this.background = Colors.blue, // Default color for appointments
-//     this.isAllDay = false,
-//     this.appointmentId,
-//     this.patientId,
-//     this.visitType,
-//     this.patientName,
-//     this.status,
-//   });
-//
-//   final String eventName;
-//   final DateTime from;
-//   final DateTime to;
-//   final Color background;
-//   final bool isAllDay;
-//   final String? appointmentId;
-//   final String? patientId;
-//   final String? visitType;
-//   final String? patientName;
-//   final String? status;
-// }
-
 class CalendarAppointment extends CalendarEventData {
   // Constructor adapted for CalendarEventData
   CalendarAppointment({
-    required super.date, // date from CalendarEventData, represents the start date
-    required super.startTime, // startTime from CalendarEventData
-    required super.endTime, // endTime from CalendarEventData
-    super.endDate, // endDate from CalendarEventData, for multi-day events
-    super.title = '', // title from CalendarEventData
-    super.description = '', // description from CalendarEventData
-    super.color = Colors.blue, // color from CalendarEventData
+    required super.date,
+    required super.startTime,
+    required super.endTime,
+    super.endDate,
+    super.title = '',
+    super.description = '',
+    super.color = Colors.blue,
     this.appointmentId,
     this.patientId,
     this.visitType,

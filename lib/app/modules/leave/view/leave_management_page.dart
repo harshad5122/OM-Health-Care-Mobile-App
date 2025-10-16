@@ -2,20 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
+import '../../message/controller/chat_user_controller.dart';
 import '../controller/leave_controller.dart';
 
 class LeaveManagementPage extends StatelessWidget {
   final LeaveController _leaveController = Get.put(LeaveController());
+  final ChatUserController _chatUserController = Get.put(ChatUserController());
 
   LeaveManagementPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    if (_chatUserController.adminList.isEmpty) {
+      _chatUserController.fetchChatUsers();
+    }
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Leave Management'),
+        title: const Text('Apply Leave'),
         backgroundColor:
-            Theme.of(context).primaryColor, // Use your app's primary color
+            Theme.of(context).primaryColor,
         foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
@@ -25,7 +30,7 @@ class LeaveManagementPage extends StatelessWidget {
           children: [
             _buildApplyLeaveSection(context),
             const SizedBox(height: 30),
-            _buildLeaveRecordsSection(),
+            // _buildLeaveRecordsSection(),
           ],
         ),
       ),
@@ -33,177 +38,214 @@ class LeaveManagementPage extends StatelessWidget {
   }
 
   Widget _buildApplyLeaveSection(BuildContext context) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              // 'Apply Leave',
-              _leaveController.isEditMode.value ? 'Edit Leave' : 'Apply Leave',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).primaryColor,
-                  ),
-            ),
-            const SizedBox(height: 20),
-            // Start Date
-            _buildDateSelectionField(
-              context,
-              label: 'Start Date',
-              selectedDate: _leaveController.startDate,
-              onTap: () => _leaveController.selectDate(context, true),
-            ),
-            const SizedBox(height: 15),
-            // End Date
-            _buildDateSelectionField(
-              context,
-              label: 'End Date',
-              selectedDate: _leaveController.endDate,
-              onTap: () => _leaveController.selectDate(context, false),
-            ),
-            const SizedBox(height: 15),
-            // Leave Type
-            Text(
-              'Leave Type',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            Obx(
-              () => DropdownButtonFormField<String>(
-                value: _leaveController.selectedLeaveType.value,
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8)),
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                ),
-                items: const [
-                  DropdownMenuItem(value: 'FULL_DAY', child: Text('Full Day')),
-                  DropdownMenuItem(
-                      value: 'FIRST_HALF', child: Text('First Half')),
-                  DropdownMenuItem(
-                      value: 'SECOND_HALF', child: Text('Second Half')),
-                ],
-                onChanged: _leaveController.setSelectedLeaveType,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          // 'Apply Leave',
+          _leaveController.isEditMode.value ? 'Edit Leave' : 'Apply Leave',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).primaryColor,
               ),
+        ),
+        const SizedBox(height: 20),
+        // Start Date
+        _buildDateSelectionField(
+          context,
+          label: 'Start Date',
+          selectedDate: _leaveController.startDate,
+          onTap: () => _leaveController.selectDate(context, true),
+        ),
+        const SizedBox(height: 15),
+        // End Date
+        _buildDateSelectionField(
+          context,
+          label: 'End Date',
+          selectedDate: _leaveController.endDate,
+          onTap: () => _leaveController.selectDate(context, false),
+        ),
+        const SizedBox(height: 15),
+        // Leave Type
+        Text(
+          'Leave Type',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 8),
+        Obx(
+          () => DropdownButtonFormField<String>(
+            value: _leaveController.selectedLeaveType.value,
+            decoration: InputDecoration(
+              border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8)),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             ),
-            const SizedBox(height: 15),
+            items: const [
+              DropdownMenuItem(value: 'FULL_DAY', child: Text('Full Day')),
+              DropdownMenuItem(
+                  value: 'FIRST_HALF', child: Text('First Half')),
+              DropdownMenuItem(
+                  value: 'SECOND_HALF', child: Text('Second Half')),
+            ],
+            onChanged: _leaveController.setSelectedLeaveType,
+          ),
+        ),
+        const SizedBox(height: 15),
 
-            Obx(() {
-              if (_leaveController.isEditMode.value) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 15),
-                    Text('Leave Status',
-                        style: Theme.of(context).textTheme.titleMedium),
-                    const SizedBox(height: 8),
-                    DropdownButtonFormField<String>(
-                      value: _leaveController.selectedStatus.value,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8)),
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
-                      ),
-                      items: const [
-                        DropdownMenuItem(
-                            value: 'PENDING', child: Text('Pending')),
-                        DropdownMenuItem(
-                            value: 'CONFIRMED', child: Text('Approved')),
-                        DropdownMenuItem(value: 'CANCELLED', child: Text('Cancelled')),
-                      ],
-                      onChanged: (val) {
-                        if (val != null)
-                          _leaveController.selectedStatus.value = val;
-                      },
-                    ),
-                  ],
-                );
+        Text(
+          'Select Admin',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 8),
+
+        Obx(() {
+          if (_chatUserController.isLoading.value) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (_chatUserController.adminList.isEmpty) {
+            return const Text('No admins available');
+          }
+
+          return DropdownButtonFormField<String>(
+            value: _leaveController.staffId.value.isEmpty
+                ? null
+                : _leaveController.staffId.value,
+            decoration: InputDecoration(
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              contentPadding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+            hint: const Text("Select an Admin"),
+            items: _chatUserController.adminList.map((admin) {
+              return DropdownMenuItem<String>(
+                value: admin.userId,
+                child: Text(admin.name),
+              );
+            }).toList(),
+            onChanged: (val) {
+              if (val != null) {
+                final selected = _chatUserController.adminList
+                    .firstWhere((a) => a.userId == val);
+                _leaveController.adminId.value = selected.userId;
+                _leaveController.adminName.value = selected.name;
               }
-              return const SizedBox.shrink();
-            }),
-            const SizedBox(height: 15),
-            // Reason for Leave
-            Text(
-              'Reason for Leave',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _leaveController.reasonController,
-              decoration: InputDecoration(
-                hintText: 'Enter your reason...',
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                contentPadding: const EdgeInsets.all(12),
-              ),
-              maxLines: 3,
-            ),
-            const SizedBox(height: 25),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+            },
+          );
+        }),
+
+        Obx(() {
+          if (_leaveController.isEditMode.value) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ElevatedButton(
-                  onPressed: () {
-                    // Implement Cancel logic if needed, e.g., clear form
-                    _leaveController.reasonController.clear();
-                    _leaveController.startDate.value = null;
-                    _leaveController.endDate.value = null;
-                    _leaveController.selectedLeaveType.value = 'FULL_DAY';
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey.shade300,
-                    foregroundColor: Colors.black87,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 12),
-                    shape: RoundedRectangleBorder(
+                const SizedBox(height: 15),
+                Text('Leave Status',
+                    style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  value: _leaveController.selectedStatus.value,
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8)),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 8),
                   ),
-                  child: const Text('Cancel'),
-                ),
-                const SizedBox(width: 10),
-                Obx(
-                  () => ElevatedButton(
-                    onPressed: _leaveController.isLoading.value
-                        ? null
-                        :  () {
-                      if (_leaveController.isEditMode.value) {
-                        _leaveController.updateLeave(_leaveController.editingLeave.value!.id);
-                      } else {
-                        _leaveController.applyLeave();
-                      }
-                    },
-                    // _leaveController.applyLeave,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).primaryColor,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                    ),
-                    child: _leaveController.isLoading.value
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : Text(_leaveController.isEditMode.value ? 'Update Leave' : 'Apply Leave'),
-                  ),
+                  items: const [
+                    DropdownMenuItem(
+                        value: 'PENDING', child: Text('Pending')),
+                    DropdownMenuItem(
+                        value: 'CONFIRMED', child: Text('Approved')),
+                    DropdownMenuItem(value: 'CANCELLED', child: Text('Cancelled')),
+                  ],
+                  onChanged: (val) {
+                    if (val != null)
+                      _leaveController.selectedStatus.value = val;
+                  },
                 ),
               ],
+            );
+          }
+          return const SizedBox.shrink();
+        }),
+        const SizedBox(height: 15),
+        // Reason for Leave
+        Text(
+          'Reason for Leave',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _leaveController.reasonController,
+          decoration: InputDecoration(
+            hintText: 'Enter your reason...',
+            border:
+                OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            contentPadding: const EdgeInsets.all(12),
+          ),
+          maxLines: 3,
+        ),
+        const SizedBox(height: 25),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            ElevatedButton(
+              onPressed: () {
+                // Implement Cancel logic if needed, e.g., clear form
+                _leaveController.reasonController.clear();
+                _leaveController.startDate.value = null;
+                _leaveController.endDate.value = null;
+                _leaveController.selectedLeaveType.value = 'FULL_DAY';
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.grey.shade300,
+                foregroundColor: Colors.black87,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
+              ),
+              child: const Text('Cancel'),
+            ),
+            const SizedBox(width: 10),
+            Obx(
+              () => ElevatedButton(
+                onPressed: _leaveController.isLoading.value
+                    ? null
+                    :  () {
+
+                  print('leave mode : ${_leaveController.isEditMode.value}');
+                  if (_leaveController.isEditMode.value) {
+                    _leaveController.updateLeave(_leaveController.editingLeave.value!.id);
+                  } else {
+                    _leaveController.applyLeave();
+                  }
+                },
+                // _leaveController.applyLeave,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).primaryColor,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 20, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                ),
+                child: _leaveController.isLoading.value
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : Text(_leaveController.isEditMode.value ? 'Update Leave' : 'Apply Leave'),
+              ),
             ),
           ],
         ),
-      ),
+      ],
     );
   }
 

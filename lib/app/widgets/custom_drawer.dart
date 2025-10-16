@@ -100,6 +100,12 @@ class CustomDrawer extends StatelessWidget {
           _buildMenuItem(Icons.event, "Book Appointment", () {
             Get.toNamed(AppRoutes.appointment);
           }),
+          _buildMenuItem(Icons.calendar_month_sharp, "Appointments", () {
+            Get.toNamed(AppRoutes.appointment_page);
+          }),
+          _buildMenuItem(Icons.outbond_outlined, "Leave", () {
+            Get.toNamed(AppRoutes.leave_page);
+          }),
         ];
 
       case 3: // Staff
@@ -110,11 +116,17 @@ class CustomDrawer extends StatelessWidget {
           _buildMenuItem(Icons.message, "Messages", () {
             Get.toNamed(AppRoutes.messageUserList);
           }),
-          _buildMenuItem(Icons.outbond_outlined, "Leave Management", () {
+          _buildMenuItem(Icons.outbond_outlined, "Apply Leave", () {
             Get.toNamed(AppRoutes.leave_management);
+          }),
+          _buildMenuItem(Icons.outbond_outlined, "Leave Record", () {
+            Get.toNamed(AppRoutes.leave_page);
           }),
           _buildMenuItem(Icons.calendar_today, "Appointments", () {
             Get.toNamed(AppRoutes.patient_appointment);
+          }),
+          _buildMenuItem(Icons.perm_contact_cal_sharp, "Patients", () {
+            Get.toNamed(AppRoutes.patients_page);
           }),
         ];
 
