@@ -8,3 +8,4 @@ class Global{
 
   static int? role;
 }
+

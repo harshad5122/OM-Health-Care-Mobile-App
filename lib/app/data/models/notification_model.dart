@@ -11,6 +11,7 @@ class NotificationModel {
   final bool read;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final String? senderName;
 
   // Optional - for attachments/messages
   final List<Attachment>? attachmentDetails;
@@ -29,6 +30,7 @@ class NotificationModel {
     this.updatedAt,
     this.attachmentDetails,
     this.messageType,
+    this.senderName,
   });
 
   factory NotificationModel.fromJson(Map<String, dynamic> json) {
@@ -40,6 +42,7 @@ class NotificationModel {
       message: json['message']?.toString(),
       referenceId: json['reference_id']?.toString(),
       referenceModel: json['reference_model']?.toString(),
+      senderName: json['sender_name']?.toString(),
       read: json['read'] ?? false,
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt'])
@@ -67,6 +70,7 @@ class NotificationModel {
       "reference_id": referenceId,
       "reference_model": referenceModel,
       "read": read,
+      "sender_name": senderName,
       "createdAt": createdAt?.toIso8601String(),
       "updatedAt": updatedAt?.toIso8601String(),
       "message_type": messageType,
@@ -88,6 +92,7 @@ class NotificationModel {
     DateTime? updatedAt,
     List<Attachment>? attachmentDetails,
     String? messageType,
+    String? senderName,
   }) {
     return NotificationModel(
       id: id ?? this.id,
@@ -102,6 +107,7 @@ class NotificationModel {
       updatedAt: updatedAt ?? this.updatedAt,
       attachmentDetails: attachmentDetails ?? this.attachmentDetails,
       messageType: messageType ?? this.messageType,
+      senderName: senderName ?? this.senderName,
     );
   }
 }

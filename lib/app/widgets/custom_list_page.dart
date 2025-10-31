@@ -20,6 +20,7 @@ class CustomListPage extends StatelessWidget {
   final String selectedDoctorText;
   final String selectedDateRangeText;
   final String formattedDateRange;
+  final ScrollController? scrollController;
 
   const CustomListPage({
     super.key,
@@ -36,108 +37,113 @@ class CustomListPage extends StatelessWidget {
     required this.selectedDoctorText,
     required this.selectedDateRangeText,
     required this.formattedDateRange,
+    this.scrollController,
   });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(appBarTitle)),
-      body: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          children: [
-            // Filter section
-            Row(
-              children: [
-        if (onSelectDoctor != null) ...[
-                Expanded(
-                  child: TextFormField(
-                    // Using a key forces the UI to rebuild the field with the new value
-                    key: Key(selectedDoctorText),
-                    initialValue: selectedDoctorText,
-                    readOnly: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Select Doctor',
-                      border: OutlineInputBorder(),
-                      suffixIcon: Icon(Icons.arrow_drop_down),
-                    ),
-                    onTap: onSelectDoctor,
-                  ),
-                ),
-                const SizedBox(width: 10),
-        ],
-                Expanded(
-                  child: TextFormField(
-                    key: Key(selectedDateRangeText),
-                    initialValue: selectedDateRangeText,
-                    readOnly: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Date Range',
-                      border: OutlineInputBorder(),
-                      suffixIcon: Icon(Icons.arrow_drop_down),
-                    ),
-                    onTap: onSelectDateRange,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-
-            // Search/Clear section
-    if (onSearch != null || onClear != null) ...[
-            Column(
-              children: [
-                Text(
-                  'Date Range: $formattedDateRange',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                ),
-                const SizedBox(height: 15),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        icon: const Icon(Icons.search),
-                        label: const Text('Search'),
-                        onPressed: onSearch,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Get.theme.primaryColor,
-                          foregroundColor: Colors.white,
-                        ),
+      body: SafeArea(
+        top: false,
+        bottom: true,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            children: [
+              // Filter section
+              Row(
+                children: [
+          if (onSelectDoctor != null) ...[
+                  Expanded(
+                    child: TextFormField(
+                      // Using a key forces the UI to rebuild the field with the new value
+                      key: Key(selectedDoctorText),
+                      initialValue: selectedDoctorText,
+                      readOnly: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Select Doctor',
+                        border: OutlineInputBorder(),
+                        suffixIcon: Icon(Icons.arrow_drop_down),
                       ),
+                      onTap: onSelectDoctor,
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        icon: const Icon(Icons.clear),
-                        label: const Text('Clear'),
-                        onPressed: onClear,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.grey[300],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-    ],
-
-            if (onSearch == null && onClear == null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Text(
-                  'Date Range: $formattedDateRange',
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.w500),
-                ),
-              ),
-
-            // List section
-            Expanded(
-              child: _buildBody(),
-            ),
+                  ),
+                  const SizedBox(width: 10),
           ],
+                  Expanded(
+                    child: TextFormField(
+                      key: Key(selectedDateRangeText),
+                      initialValue: selectedDateRangeText,
+                      readOnly: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Date Range',
+                        border: OutlineInputBorder(),
+                        suffixIcon: Icon(Icons.arrow_drop_down),
+                      ),
+                      onTap: onSelectDateRange,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+
+              // Search/Clear section
+            if (onSearch != null || onClear != null) ...[
+              Column(
+                children: [
+                  Text(
+                    'Date Range: $formattedDateRange',
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 15),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          icon: const Icon(Icons.search),
+                          label: const Text('Search'),
+                          onPressed: onSearch,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Get.theme.primaryColor,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          icon: const Icon(Icons.clear),
+                          label: const Text('Clear'),
+                          onPressed: onClear,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.grey[300],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+            ],
+
+              if (onSearch == null && onClear == null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Text(
+                    'Date Range: $formattedDateRange',
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.w500),
+                  ),
+                ),
+
+              // List section
+              Expanded(
+                child: _buildBody(),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -157,6 +163,7 @@ class CustomListPage extends StatelessWidget {
     return ListView.builder(
       itemCount: itemCount,
       itemBuilder: itemBuilder,
+      controller: scrollController,
     );
   }
 }

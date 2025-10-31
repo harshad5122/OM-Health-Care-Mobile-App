@@ -1,8 +1,10 @@
 abstract class AppRoutes {
   static const login = '/login';
+  static const splash = '/splash';
   static const signup = '/signup';
   static const dashboard = '/dashboard';
   static const profile = '/profile';
+  static const notification = '/notification';
   static const addDoctor = '/addDoctor';
   static const addUser = '/addUser';
   static const changePassword = '/change-password';
@@ -17,4 +19,5 @@ abstract class AppRoutes {
   static const appointment_page = '/appointment-page';
   static const leave_page = '/leave-page';
   static const patients_page = '/patients-page';
+  static const booking_appointment = '/booking-appointment';
 }

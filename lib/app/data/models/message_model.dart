@@ -26,6 +26,7 @@ class MessageModel {
   final bool isEdited;
   final bool isRead;
   final String? broadcastId;
+  final String? tempId;
 
 
   MessageModel({
@@ -53,6 +54,7 @@ class MessageModel {
     this.isEdited = false,
     this.isRead = false,
     this.broadcastId,
+    this.tempId,
   }) : createdAt = createdAt is int
       ? DateTime.fromMillisecondsSinceEpoch(createdAt)
       : createdAt is String
@@ -108,7 +110,7 @@ class MessageModel {
           ? MessageModel.fromJson(json['reply_to_details'])
           : null,
 
-      isEdited: json["is_edited"] ?? false,
+      isEdited: json["edited"] ?? false,
       isRead: json["is_read"] ?? false,
     );
   }
@@ -138,7 +140,7 @@ class MessageModel {
       "status": status,
       'reply_to_details': replyToDetails?.toJson(),
 
-      "is_edited": isEdited,
+      "edited": isEdited,
       "is_read": isRead,
     };
   }
@@ -170,6 +172,7 @@ class MessageModel {
 
     bool? isEdited,
     bool? isRead,
+    String? tempId,
   }) {
     return MessageModel(
       messageId: messageId ?? this.messageId,
@@ -194,6 +197,7 @@ class MessageModel {
 
       isEdited: isEdited ?? this.isEdited,
       isRead: isRead ?? this.isRead,
+      tempId: tempId ?? this.tempId,
     );
   }
 

@@ -1,19 +1,19 @@
 //
+// import 'dart:convert';
 // import 'package:flutter/material.dart';
 // import 'package:get/get.dart';
-// import 'package:calendar_view/calendar_view.dart';
-//
+// import 'package:intl/intl.dart';
+// import 'package:om_health_care_app/app/global/global.dart';
+// import 'package:syncfusion_flutter_calendar/calendar.dart'; // Only Syncfusion
 // import '../../../data/models/staff_list_model.dart';
 // import '../../../data/models/appointment_model.dart';
 // import '../controller/appointment_controller.dart';
 // import '../widgets/book_appointment_custom_dialog.dart';
 //
-// enum MyCalendarViewType { month, week, day }
-//
 // class BookingCalenderView extends StatefulWidget {
-//   final StaffListModel doctor;
+//   final StaffListModel? doctor;
 //
-//   const BookingCalenderView({super.key, required this.doctor});
+//   const BookingCalenderView({super.key, this.doctor});
 //
 //   @override
 //   State<BookingCalenderView> createState() => _BookingCalenderViewState();
@@ -21,329 +21,333 @@
 //
 // class _BookingCalenderViewState extends State<BookingCalenderView> {
 //   late final AppointmentController controller;
-//
-//   MyCalendarViewType _calendarView = MyCalendarViewType.month;
+//   StaffListModel? selectedDoctor;
 //
 //   @override
 //   void initState() {
 //     super.initState();
-//     controller = Get.find<AppointmentController>();
-//     WidgetsBinding.instance.addPostFrameCallback((_) {
-//       controller.setSelectedStaff(widget.doctor.id ?? '');
+//     controller = Get.put(AppointmentController());
+//
+//     controller.isLoading.value = false;
+//     controller.isLoadingPatients.value = false;
+//
+//     final doctorArg = Get.arguments?["doctor"];
+//     if (doctorArg != null && doctorArg is StaffListModel) {
+//       selectedDoctor = doctorArg;
+//     } else {
+//       selectedDoctor = widget.doctor;
+//     }
+//
+//     WidgetsBinding.instance.addPostFrameCallback((_) async{
+//       final String staffIdToLoad;
+//       if (Global.role == 3) {
+//         staffIdToLoad = Global.staffId ?? '';
+//       } else {
+//         staffIdToLoad =selectedDoctor?.id ?? '';
+//       }
+//
+//       print("BookingCalenderView: Loading staff ID: $staffIdToLoad for Role: ${Global.role}");
+//       if (staffIdToLoad.isNotEmpty) {
+//         print('enter hereeeeee');
+//         await controller.setSelectedStaff(staffIdToLoad);
+//       } else {
+//         print("Error: No Staff ID found to load appointments.");
+//       }
 //     });
 //   }
 //
-//   // ---------- Calendar view switcher ----------
-//   Widget _buildCalendarViewWidget() {
-//     switch (_calendarView) {
-//       case MyCalendarViewType.month:
-//         return MonthView<CalendarAppointment>(
-//           controller: controller.eventController,
-//           // MonthView.onEventTap provides List<CalendarEventData<T>>
-//           onEventTap: (events, date) {
-//             print('enter this tap event');
-//             // _handleEventTapList(events, date);
-//             _handleEventTapSingle(events, date);
-//           },
-//           // MonthView.onCellTap provides List<CalendarEventData<T>>
-//           onCellTap: (events, date) {
-//             print('enter this tap cell');
-//             _handleDateTap(date, []);
-//           },
+//   /// Filter Syncfusion appointments for a particular day (date has no time)
+//   List<Appointment> _sfAppointmentsForDay(DateTime date, List<Appointment> allSfAppointments) {
 //
-//           cellBuilder: (date, events, isToday, isInMonth, hideDaysNotInMonth) {
-//             final now = DateTime.now();
-//             final today = DateTime(now.year, now.month, now.day);
+//     return allSfAppointments.where((a) {
 //
-//             // The first visible month in the grid (depends on navigation)
-//             final currentVisibleMonth = date.month;
+//       return a.startTime.year == date.year &&
+//           a.startTime.month == date.month &&
+//           a.startTime.day == date.day;
+//     }).toList();
+//   }
 //
-//             // Determine if this cell belongs to the visible month
-//             final isCurrentMonthCell = isInMonth;
-//             bool isDisabled = false;
-//             if (!isCurrentMonthCell) {
-//               // Always disable days from prev/next month
-//               isDisabled = true;
-//             } else if (date.month == today.month && date.year == today.year) {
-//               // Current month → disable only past dates
-//               if (date.isBefore(today)) {
-//                 isDisabled = true;
-//               }
+//   void _openBookingBottomSheet(BuildContext context, AppointmentController controller,
+//       {Appointment? existingSfAppointment}) {
+//     if (existingSfAppointment != null && existingSfAppointment.notes != null) {
+//       // Reconstruct CalendarAppointment from Syncfusion Appointment notes for your dialog
+//       final AppointmentModel originalApptModel = AppointmentModel.fromJson(jsonDecode(existingSfAppointment.notes!));
+//
+//       print('Parsed originalApptModel appointmentId: ${originalApptModel.appointmentId}');
+//
+//
+//       final CalendarAppointment tempCalendarAppt = CalendarAppointment(
+//         date: existingSfAppointment.startTime, // Use startTime for the date
+//         startTime: existingSfAppointment.startTime,
+//         endTime: existingSfAppointment.endTime,
+//         title: existingSfAppointment.subject,
+//         color: existingSfAppointment.color,
+//         appointmentId: originalApptModel.appointmentId,
+//         patientId: originalApptModel.patientId,
+//         visitType: originalApptModel.visitType,
+//         patientName: originalApptModel.patientName,
+//         status: originalApptModel.status,
+//         type: originalApptModel.visitType == 'leave' ? 'leave' : 'booked', // Adjust type if needed
+//       );
+//
+//       print('tempCalendarAppt appointmentId: ${tempCalendarAppt.appointmentId}');
+//       controller.selectExistingAppointment(tempCalendarAppt);
+//     } else {
+//       controller.clearAppointmentSelection();
+//     }
+//
+//     Get.bottomSheet(
+//       BookAppointmentCustomDialog(
+//         controller: controller,
+//         isEdit: existingSfAppointment != null,
+//       ),
+//       isScrollControlled: true,
+//       shape: const RoundedRectangleBorder(
+//         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+//       ),
+//       backgroundColor: Colors.white,
+//     );
+//   }
+//
+//   Widget _buildBottomEventList(AppointmentController controller) {
+//     return Obx(() {
+//       if (controller.isLoading.value && controller.bookedSlots.isEmpty) {
+//         return const Center(child: CircularProgressIndicator());
+//       }
+//       if (controller.bookedSlots.isEmpty) {
+//         return const Padding(
+//           padding: EdgeInsets.all(16),
+//           child: Text(
+//             "No appointments for this day.",
+//             style: TextStyle(fontSize: 14),
+//           ),
+//         );
+//       }
+//
+//       return ListView.separated(
+//         shrinkWrap: true,
+//         physics: const NeverScrollableScrollPhysics(), // Important for nested scroll
+//         itemCount: controller.bookedSlots.length,
+//         separatorBuilder: (_, __) => const Divider(height: 1),
+//         itemBuilder: (context, index) {
+//           final event = controller.bookedSlots[index];
+//
+//           Color bgColor;
+//           Color textColor = Colors.white;
+//           if (event.type == 'booked') {
+//             if (event.status == 'COMPLETED') {
+//               bgColor = Get.theme.primaryColor;
+//             } else if (event.status == 'CONFIRMED') {
+//               bgColor = Colors.green.shade600;
+//             } else if (event.status == 'PENDING') {
+//               bgColor = Colors.orange.shade400;
 //             } else {
-//               // Future months → all days inside month enabled
-//               isDisabled = false;
+//               bgColor = Colors.grey.shade600;
 //             }
-//             final isPastDate = date.isBefore(
-//               DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day),
-//             );
+//           } else if (event.type == 'leave') {
+//             bgColor = Colors.blueGrey.shade600;
+//           } else {
+//             bgColor = Colors.red.shade400; // Fallback for unknown type
+//           }
 //
-//             // Filter events for this specific cell that belong to the current month
-//             final relevantEvents = events.where((event) => event.date.month == date.month).toList();
-//             const int maxDisplayedEvents = 2;
-//             final List<CalendarEventData<CalendarAppointment>> eventsToDisplay = relevantEvents.take(maxDisplayedEvents).toList();
-//             final int remainingEventsCount = relevantEvents.length - eventsToDisplay.length;
+//           return ListTile(
+//             tileColor: bgColor,
+//             shape:
+//             RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+//             title: Text(
+//               event.title,
+//               style: TextStyle(color: textColor, fontWeight: FontWeight.w500),
+//             ),
+//             subtitle: Text(
+//               // "${event.start} - ${event.end}",
+//               "${controller.formatTimeForDisplay(event.start)} - ${controller.formatTimeForDisplay(event.end)}",
+//               style:
+//               TextStyle(color: textColor.withOpacity(0.8), fontSize: 12),
+//             ),
+//             onTap: () {
+//
+//               final Appointment sfAppointmentForDialog = Appointment(
+//                 startTime: DateFormat('HH:mm').parse(event.start)
+//                     .copyWith(year: controller.selectedDate.value.year, month: controller.selectedDate.value.month, day: controller.selectedDate.value.day),
+//                 endTime: DateFormat('HH:mm').parse(event.end)
+//                     .copyWith(year: controller.selectedDate.value.year, month: controller.selectedDate.value.month, day: controller.selectedDate.value.day),
+//                 subject: event.title,
+//                 color: bgColor, // Use the determined background color
+//                 notes: jsonEncode(AppointmentModel(
+//                   appointmentId: event.id,
+//                   patientId: event.patientId,
+//                   patientName: event.patientName,
+//                   visitType: event.visitType,
+//                   date: DateFormat('yyyy-MM-dd').format(controller.selectedDate.value),
+//                   timeSlot: TimeSlot(start: event.start, end: event.end),
+//                   status: event.status,
+//                   staffId: controller.selectedStaffId.value,
+//                 ).toJson()),
+//               );
+//
+//               _openBookingBottomSheet(context, controller, existingSfAppointment: sfAppointmentForDialog);
+//             },
+//           );
+//         },
+//       );
+//     });
+//   }
+//
+//   @override
+//   Widget build(BuildContext context) {
+//
+//     return Scaffold(
+//       appBar: AppBar(
+//         title: Text(Global.role == 3
+//             ? "My Schedule"
+//             : (widget.doctor?.firstname ?? "Doctor's") + " Schedule"),
+//       ),
+//       body: Column(
+//         children: [
+//
+//           SizedBox(
+//             height: 420,
+//             child: Obx(() {
+//
+//               final List<Appointment> allSfAppointments = controller.sfCalendarAppointments.toList();
+//
+//               return SfCalendar(
+//                 view: CalendarView.month,
+//                 dataSource: AppointmentDataSource(allSfAppointments),
+//                 monthViewSettings: const MonthViewSettings(
+//                   appointmentDisplayMode: MonthAppointmentDisplayMode.none,
+//                   showAgenda: false,
+//                 ),
+//                 onViewChanged: (ViewChangedDetails details) {
+//                   final DateTime middleDate = details.visibleDates[details.visibleDates.length ~/ 2];
+//                   controller.onMonthChanged(middleDate);
+//                 },
+//                 monthCellBuilder: (BuildContext context, MonthCellDetails details) {
+//                   final eventsForDate = _sfAppointmentsForDay(details.date, allSfAppointments);
+//                   final bool isSelectedDate = isSameDay(details.date, controller.selectedDate.value);
+//
+//                   final bool isPastDate = details.date.isBefore(DateTime(
+//                       DateTime.now().year, DateTime.now().month, DateTime.now().day));
+//
+//
+//
+//                   return Container(
+//                     decoration: BoxDecoration(
+//                       border: Border.all(color: Colors.grey[300]!, width: 0.5),
+//                       color: isSelectedDate ? Get.theme.primaryColor.withOpacity(0.2) : null,
+//                     ),
+//                     child: Stack(
+//                       children: [
+//                         Positioned(
+//                           top: 5,
+//                           right: 5,
+//                           child: Text(
+//                             '${details.date.day}',
+//                             style: TextStyle(
+//                               color: details.date.month == controller.selectedDate.value.month
+//                                   ? (isPastDate ? Colors.grey : Colors.black)
+//                                   : Colors.grey,
+//                             ),
+//                           ),
+//                         ),
+//                         if (eventsForDate.isNotEmpty)
+//                           Positioned(
+//                             bottom: 5,
+//                             left: 0,
+//                             right: 0,
+//                             child: Row(
+//                               mainAxisAlignment: MainAxisAlignment.center,
+//                               children: eventsForDate.take(3).map((sfAppointment) {
+//                                 Color dotColor = Colors.blue;
+//                                 if (sfAppointment.notes != null) {
+//                                   final AppointmentModel apptModel = AppointmentModel.fromJson(jsonDecode(sfAppointment.notes!));
+//                                   if (apptModel.status == 'leave' || apptModel.visitType == 'leave') {
+//                                     dotColor = Colors.grey;
+//                                   } else if (apptModel.status == 'CONFIRMED') {
+//                                     dotColor = Colors.green;
+//                                   } else if (apptModel.status == 'PENDING') {
+//                                     dotColor = Colors.orange;
+//                                   } else if (apptModel.status == 'COMPLETED') {
+//                                     dotColor = Get.theme.primaryColor;
+//                                   }
+//                                 }
+//                                 return Container(
+//                                   width: 5,
+//                                   height: 5,
+//                                   margin: const EdgeInsets.symmetric(horizontal: 1),
+//                                   decoration: BoxDecoration(
+//                                     color: dotColor,
+//                                     shape: BoxShape.circle,
+//                                   ),
+//                                 );
+//                               }).toList(),
+//                             ),
+//                           ),
+//                       ],
+//                     ),
+//                   );
+//                 },
+//                 onTap: (CalendarTapDetails details) {
+//                   if (details.targetElement == CalendarElement.calendarCell) {
+//                     final DateTime tappedDate = details.date ?? DateTime.now();
+//                     controller.selectedDate.value =
+//                         DateTime(tappedDate.year, tappedDate.month, tappedDate.day);
+//                   } else if (details.targetElement == CalendarElement.appointment) {
+//                     final Appointment sfAppointment = details.appointments!.first as Appointment;
+//                     _openBookingBottomSheet(context, controller, existingSfAppointment: sfAppointment);
+//                   }
+//                 },
+//                 headerHeight: 60,
+//                 todayHighlightColor: Get.theme.primaryColor,
+//                 showDatePickerButton: false,
+//               );
+//             }),
+//           ),
+//
+//
+//           // Selected date indicator + bottom list
+//           Obx(() {
+//             final List<Appointment> allSfAppointments = controller.sfCalendarAppointments;
+//             final selectedDaySfAppointments = _sfAppointmentsForDay(
+//                 controller.selectedDate.value, allSfAppointments);
 //
 //             return Container(
-//               decoration: BoxDecoration(
-//                 color: (isDisabled || isPastDate)  ? Colors.grey.shade200 : Colors.white,
-//                 border: Border.all(color: Colors.grey.shade300),
-//               ),
-//               child: Column(
+//               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+//               color: Colors.white,
+//               child: Row(
 //                 children: [
-//                   Align(
-//                     alignment: Alignment.topCenter,
-//                     child: Padding(
-//                       padding: const EdgeInsets.only(top: 4.0, bottom: 8.0),
-//                       child: Text(
-//                         '${date.day}',
-//                         style: TextStyle(
-//                           color: isDisabled && isPastDate ? Colors.grey : Colors.black,
-//                           fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
-//                           fontSize: 12,
-//                         ),
-//                       ),
+//                   CircleAvatar(
+//                     radius: 20,
+//                     backgroundColor: Get.theme.primaryColor,
+//                     child: Text(
+//                       '${controller.selectedDate.value.day}',
+//                       style: const TextStyle(
+//                           color: Colors.white, fontWeight: FontWeight.bold),
 //                     ),
 //                   ),
-//                   // Display events
-//                   // if (!isDisabled)
-//                   Expanded(
-//                     child: SingleChildScrollView( // Make events scrollable if too many
-//                       physics: const NeverScrollableScrollPhysics(), // Prevent dialog scrolling
-//                       child: Column(
-//
-//                         children: [
-//                           ...eventsToDisplay.map((event) {
-//                             return Container(
-//                               margin: const EdgeInsets.symmetric(horizontal: 1.0, vertical: 1.0),
-//                               padding: const EdgeInsets.symmetric(horizontal: 0.0, vertical: 4.0),
-//                               decoration: BoxDecoration(
-//                                 color: event.color,
-//                                 borderRadius: BorderRadius.circular(4),
-//                               ),
-//                               child: Text(
-//                                 event.title, // Display the title from CalendarEventData
-//                                 style: const TextStyle(
-//                                   color: Colors.white,
-//                                   fontSize: 8, // Smaller font for month view
-//                                   overflow: TextOverflow.ellipsis, // Handle long titles
-//                                 ),
-//                                 maxLines: 1,
-//                               ),
-//                             );
-//                           }).toList(),
-//                           if (remainingEventsCount > 0)
-//                             Padding(
-//                               padding: const EdgeInsets.only(top: 2.0),
-//                               child: Text(
-//                                 '+${remainingEventsCount} more',
-//                                 style: TextStyle(
-//                                   color: Colors.grey.shade700,
-//                                   fontSize: 10,
-//                                   fontWeight: FontWeight.bold,
-//                                 ),
-//                               ),
-//                             ),
-//                         ],
+//                   const SizedBox(width: 12),
+//                   Column(
+//                     crossAxisAlignment: CrossAxisAlignment.start,
+//                     children: [
+//                       Text(
+//                         '${_weekdayString(controller.selectedDate.value)}, ${_monthDayString(controller.selectedDate.value)}',
+//                         style: const TextStyle(fontWeight: FontWeight.bold),
 //                       ),
-//                     ),
+//                       const SizedBox(height: 2),
+//                       Text('${selectedDaySfAppointments.length} appointments'),
+//                     ],
 //                   ),
 //                 ],
 //               ),
 //             );
-//           },
-//         );
+//           }),
 //
-//       case MyCalendarViewType.week:
-//         return WeekView<CalendarAppointment>(
-//           controller: controller.eventController,
-//           // WeekView.onEventTap provides a single CalendarEventData<T>
-//           onEventTap: (event, date) { // 'event' here is single, not a list
-//             // _handleEventTapSingle(event, date);
-//             _handleEventTapList(event, date);
-//           },
-//           onDateTap: (date) {
-//             _handleDateTap(date, []);
-//           },
-//           onDateLongPress: (date) {
-//             _handleDateTap(date, []); // No events involved in this type of tap
-//           },
-//           eventTileBuilder: (date, events, boundary, startDuration, endDuration) {
-//             final event = events.isNotEmpty ? events.first : null;
-//
-//             if (event == null) return const SizedBox.shrink();
-//
-//             return Container(
-//               decoration: BoxDecoration(
-//                 color: event.color, // 🔹 Event background color
-//                 borderRadius: BorderRadius.circular(8), // 🔹 Rounded corners
-//               ),
-//               padding: const EdgeInsets.symmetric(horizontal: 2), // 🔹 Padding inside the event box
-//               child: Center(
-//                 child: Text(
-//                   event.title,
-//                   style: const TextStyle(
-//                     fontSize: 12,
-//                     fontWeight: FontWeight.w500,
-//                     color: Colors.white, // 🔹 Text color
-//                     overflow: TextOverflow.clip,
-//                   ),
-//                 ),
-//               ),
-//             );
-//           },
-//
-//         );
-//
-//       case MyCalendarViewType.day:
-//         return DayView<CalendarAppointment>(
-//           controller: controller.eventController,
-//           // DayView.onEventTap provides a single CalendarEventData<T>
-//           onEventTap: (event, date) { // 'event' here is single, not a list
-//             // _handleEventTapSingle(event, date);
-//             _handleEventTapList(event, date);
-//           },
-//           onDateTap: (date) {
-//             _handleDateTap(date, []);
-//           },
-//           onDateLongPress: (date) {
-//             _handleDateTap(date, []); // No events involved in this type of tap
-//           },
-//           eventTileBuilder: (date, events, boundary, startDuration, endDuration) {
-//             final event = events.isNotEmpty ? events.first : null;
-//
-//             if (event == null) return const SizedBox.shrink();
-//
-//             return Container(
-//               decoration: BoxDecoration(
-//                 color: event.color, // 🔹 Event background color
-//                 borderRadius: BorderRadius.circular(8), // 🔹 Rounded corners
-//               ),
-//               padding: const EdgeInsets.symmetric(horizontal: 2), // 🔹 Padding inside the event box
-//               child: Center(
-//                 child: Text(
-//                   event.title,
-//                   style: const TextStyle(
-//                     fontSize: 14,
-//                     fontWeight: FontWeight.w500,
-//                     color: Colors.white, // 🔹 Text color
-//                     overflow: TextOverflow.ellipsis,
-//                   ),
-//                 ),
-//               ),
-//             );
-//           },
-//         );
-//
-//       default:
-//       // Fallback
-//         return MonthView<CalendarAppointment>(
-//           controller: controller.eventController,
-//           onEventTap: (events, date) {
-//             // _handleEventTapList(events, date);
-//             _handleEventTapSingle(events, date);
-//           },
-//           onCellTap: (events, date) {
-//             _handleDateTap(date, events);
-//           },
-//         );
-//     }
-//   }
-//
-//   // ---------- Helpers ----------
-//
-//   // New helper for when a single event is tapped (WeekView, DayView)
-//   void _handleEventTapSingle(CalendarEventData<CalendarAppointment> eventData, DateTime date) {
-//     if (eventData.event != null) {
-//       final CalendarAppointment tappedAppointment = eventData.event!;
-//       controller.selectedDate.value = date;
-//       controller.selectExistingAppointment(tappedAppointment);
-//
-//       // Get.dialog(BookAppointmentCustomDialog(
-//       //   controller: controller,
-//       //   isEdit: true,
-//       // ));
-//       Get.bottomSheet( // Changed from Get.dialog
-//         BookAppointmentCustomDialog(
-//           controller: controller,
-//           isEdit: true,
-//         ),
-//         isScrollControlled: true, // Allows the bottom sheet to take full height if needed
-//         backgroundColor: Colors.white, // Set a background color for the bottom sheet
-//         shape: const RoundedRectangleBorder( // Optional: Add rounded corners
-//           borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-//         ),
-//       );
-//     }
-//   }
-//
-//   // Existing helper for when a list of events is provided (MonthView)
-//   void _handleEventTapList(List<CalendarEventData<CalendarAppointment>> events, DateTime date) {
-//     if (events.isNotEmpty) {
-//       final CalendarAppointment tappedAppointment = events.first.event!;
-//       controller.selectedDate.value = date;
-//       controller.selectExistingAppointment(tappedAppointment);
-//
-//       // Get.dialog(BookAppointmentCustomDialog(
-//       //   controller: controller,
-//       //   isEdit: true,
-//       // ));
-//       Get.bottomSheet( // Changed from Get.dialog
-//         BookAppointmentCustomDialog(
-//           controller: controller,
-//           isEdit: true,
-//         ),
-//         isScrollControlled: true, // Allows the bottom sheet to take full height if needed
-//         backgroundColor: Colors.white, // Set a background color for the bottom sheet
-//         shape: const RoundedRectangleBorder( // Optional: Add rounded corners
-//           borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-//         ),
-//       );
-//     }
-//   }
-//
-//   void _handleDateTap(DateTime date, List<CalendarEventData<CalendarAppointment>> events) {
-//     // don’t allow past date selection
-//     if (date.isBefore(DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day))) {
-//       return;
-//     }
-//
-//     // This handles taps on empty cells/background
-//     controller.selectedDate.value = date;
-//     controller.clearAppointmentSelection();
-//
-//     // Get.dialog(BookAppointmentCustomDialog(
-//     //   controller: controller,
-//     //   isEdit: false,
-//     // ));
-//     Get.bottomSheet( // Changed from Get.dialog
-//       BookAppointmentCustomDialog(
-//         controller: controller,
-//         isEdit: false,
-//       ),
-//       isScrollControlled: true, // Allows the bottom sheet to take full height if needed
-//       backgroundColor: Colors.white, // Set a background color for the bottom sheet
-//       shape: const RoundedRectangleBorder( // Optional: Add rounded corners
-//         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-//       ),
-//     );
-//   }
-//
-//   // ---------- Build ----------
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(title: const Text("Choose Appointment Date")),
-//       body: Column(
-//         children: [
-//           _buildViewSelectionButtons(),
 //           Expanded(
-//             child: CalendarControllerProvider<CalendarAppointment>(
-//               controller: controller.eventController,
-//               child:
-//                 _buildCalendarViewWidget(),
-//
+//             child: SingleChildScrollView(
+//               child: _buildBottomEventList(controller),
 //             ),
 //           ),
+//
 //           Obx(() => controller.isLoading.value
 //               ? const Padding(
 //             padding: EdgeInsets.all(8.0),
@@ -352,65 +356,93 @@
 //               : const SizedBox.shrink()),
 //         ],
 //       ),
-//     );
-//   }
-//
-//   Widget _buildViewSelectionButtons() {
-//     return Padding(
-//       padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-//       child: SegmentedButton<MyCalendarViewType>(
-//         segments: const <ButtonSegment<MyCalendarViewType>>[
-//           ButtonSegment<MyCalendarViewType>(
-//             value: MyCalendarViewType.month,
-//             label: Text('Month'),
-//             icon: Icon(Icons.calendar_view_month),
-//           ),
-//           ButtonSegment<MyCalendarViewType>(
-//             value: MyCalendarViewType.week,
-//             label: Text('Week'),
-//             icon: Icon(Icons.calendar_view_week),
-//           ),
-//           ButtonSegment<MyCalendarViewType>(
-//             value: MyCalendarViewType.day,
-//             label: Text('Day'),
-//             icon: Icon(Icons.calendar_view_day),
-//           ),
-//         ],
-//         selected: <MyCalendarViewType>{_calendarView},
-//         onSelectionChanged: (Set<MyCalendarViewType> newSelection) {
-//           setState(() {
-//             _calendarView = newSelection.first;
-//             _updateAppointmentsForCurrentView();
-//           });
+//       floatingActionButton: Obx(() => (controller.isPastSelectedDate.value)
+//     ? const SizedBox.shrink() // If selected date is in the past, hide the FAB
+//         :
+//     FloatingActionButton(
+//         onPressed: () {
+//           // Open the booking bottom sheet for a new appointment
+//           _openBookingBottomSheet(context, controller);
 //         },
-//         style: SegmentedButton.styleFrom(
-//           selectedBackgroundColor: Get.theme.primaryColor,
-//           selectedForegroundColor: Colors.white,
-//         ),
+//         child: const Icon(Icons.add),
+//       ),
 //       ),
 //     );
 //   }
 //
-//   void _updateAppointmentsForCurrentView() {
-//     controller.selectedDate.refresh(); // trigger worker in controller
+//   bool isSameDay(DateTime dateA, DateTime dateB) {
+//     return dateA.year == dateB.year &&
+//         dateA.month == dateB.month &&
+//         dateA.day == dateB.day;
+//   }
+//
+//   String _weekdayString(DateTime d) {
+//     const names = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+//     return names[d.weekday % 7];
+//   }
+//
+//   String _monthDayString(DateTime d) {
+//     const months = [
+//       'Jan',
+//       'Feb',
+//       'Mar',
+//       'Apr',
+//       'May',
+//       'Jun',
+//       'Jul',
+//       'Aug',
+//       'Sep',
+//       'Oct',
+//       'Nov',
+//       'Dec'
+//     ];
+//     return '${months[d.month - 1]} ${d.day}';
 //   }
 // }
-
-
-
-
-
-
+//
+// /// Simple CalendarDataSource wrapper for sfcalendar
+// class AppointmentDataSource extends CalendarDataSource {
+//   AppointmentDataSource(List<Appointment> source) {
+//     appointments = source;
+//   }
+//
+//   @override
+//   DateTime getStartTime(int index) {
+//     return appointments![index].startTime;
+//   }
+//
+//   @override
+//   DateTime getEndTime(int index) {
+//     return appointments![index].endTime;
+//   }
+//
+//   @override
+//   String getSubject(int index) {
+//     return appointments![index].subject;
+//   }
+//
+//   @override
+//   Color getColor(int index) {
+//     return appointments![index].color;
+//   }
+//
+//   @override
+//   bool isAllDay(int index) {
+//     return appointments![index].isAllDay;
+//   }
+// }
+//
+//
 
 
 
 
 
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:om_health_care_app/app/global/global.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 import '../../../data/models/staff_list_model.dart';
 import '../../../data/models/appointment_model.dart';
@@ -418,9 +450,9 @@ import '../controller/appointment_controller.dart';
 import '../widgets/book_appointment_custom_dialog.dart';
 
 class BookingCalenderView extends StatefulWidget {
-  final StaffListModel doctor;
+  final StaffListModel? doctor;
 
-  const BookingCalenderView({super.key, required this.doctor});
+  const BookingCalenderView({super.key, this.doctor});
 
   @override
   State<BookingCalenderView> createState() => _BookingCalenderViewState();
@@ -428,103 +460,80 @@ class BookingCalenderView extends StatefulWidget {
 
 class _BookingCalenderViewState extends State<BookingCalenderView> {
   late final AppointmentController controller;
-
-  /// Selected date shown on calendar / bottom list
-  DateTime _selectedDate = DateTime(
-      DateTime.now().year, DateTime.now().month, DateTime.now().day);
+  StaffListModel? selectedDoctor;
+  // ADDED: CalendarController to control navigation and get the currently displayed month
+  final CalendarController _calendarController = CalendarController();
 
   @override
   void initState() {
     super.initState();
-    controller = Get.find<AppointmentController>();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      controller.setSelectedStaff(widget.doctor.id ?? '');
-      // If your controller stores currently selected date, keep it in sync:
-      controller.selectedDate.value = _selectedDate;
+    controller = Get.put(AppointmentController());
+
+    controller.isLoading.value = false;
+    controller.isLoadingPatients.value = false;
+
+    final doctorArg = Get.arguments?["doctor"];
+    if (doctorArg != null && doctorArg is StaffListModel) {
+      selectedDoctor = doctorArg;
+    } else {
+      selectedDoctor = widget.doctor;
+    }
+
+    // Set initial display date for the calendar controller
+    _calendarController.displayDate = controller.selectedDate.value;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async{
+      final String staffIdToLoad;
+      if (Global.role == 3) {
+        staffIdToLoad = Global.staffId ?? '';
+      } else {
+        staffIdToLoad =selectedDoctor?.id ?? '';
+      }
+
+      print("BookingCalenderView: Loading staff ID: $staffIdToLoad for Role: ${Global.role}");
+      if (staffIdToLoad.isNotEmpty) {
+        print('enter hereeeeee');
+        await controller.setSelectedStaff(staffIdToLoad);
+      } else {
+        print("Error: No Staff ID found to load appointments.");
+      }
     });
   }
 
-  List<Appointment> _buildSfAppointments() {
-    final List<Appointment> result = [];
-
-    // ✅ Ensure we work with a normal list
-    final List<AppointmentModel> appts = controller.appointments.toList();
-    if (appts.isEmpty) return [];
-
-    try {
-      for (final a in appts) {
-        DateTime start = DateTime.now();
-        DateTime end = DateTime.now().add(const Duration(hours: 1));
-
-        if (a.date != null && a.timeSlot != null) {
-          try {
-            final parsedDate = DateTime.tryParse(a.date!);
-            if (parsedDate != null) {
-              final startParts = a.timeSlot!.start?.split(':') ?? ['0', '0'];
-              final endParts = a.timeSlot!.end?.split(':') ?? ['0', '0'];
-
-              final startHour = int.tryParse(startParts[0]) ?? 0;
-              final startMin = int.tryParse(startParts[1]) ?? 0;
-              final endHour = int.tryParse(endParts[0]) ?? 0;
-              final endMin = int.tryParse(endParts[1]) ?? 0;
-
-              start = DateTime(parsedDate.year, parsedDate.month, parsedDate.day, startHour, startMin);
-              end = DateTime(parsedDate.year, parsedDate.month, parsedDate.day, endHour, endMin);
-            }
-          } catch (e) {
-            debugPrint('Error parsing date/time: $e');
-          }
-        }
-
-        final subject = a.patientName ?? a.visitType ?? "Appointment";
-        final color = _getColorForStatus(a.status);
-
-        result.add(
-          Appointment(
-            startTime: start,
-            endTime: end,
-            subject: subject,
-            color: color,
-            notes: jsonEncode(a.toJson()), // store original model
-          ),
-        );
-      }
-    } catch (e) {
-      debugPrint('Error mapping appointments for SfCalendar: $e');
-    }
-
-    return result;
-  }
-
-  /// Helper to assign color by status
-  Color _getColorForStatus(String? status) {
-    switch (status?.toLowerCase()) {
-      case 'confirmed':
-        return Colors.green;
-      case 'cancelled':
-        return Colors.red;
-      case 'completed':
-        return Colors.blueGrey;
-      default:
-        return Colors.blue;
-    }
-  }
-
-  /// Filter appointments for a particular day (date has no time)
-  List<Appointment> _appointmentsForDay(DateTime date, List<Appointment> all) {
-    final startOfDay = DateTime(date.year, date.month, date.day);
-    final endOfDay = startOfDay.add(const Duration(days: 1));
-    return all.where((a) {
-      return a.startTime.isBefore(endOfDay) && a.endTime.isAfter(startOfDay);
+  /// Filter Syncfusion appointments for a particular day (date has no time)
+  List<Appointment> _sfAppointmentsForDay(DateTime date, List<Appointment> allSfAppointments) {
+    return allSfAppointments.where((a) {
+      return a.startTime.year == date.year &&
+          a.startTime.month == date.month &&
+          a.startTime.day == date.day;
     }).toList();
   }
 
-
   void _openBookingBottomSheet(BuildContext context, AppointmentController controller,
-      {CalendarAppointment? existingAppointment}) {
-    // If editing an existing appointment
-    if (existingAppointment != null) {
-      controller.selectExistingAppointment(existingAppointment);
+      {Appointment? existingSfAppointment}) {
+    if (existingSfAppointment != null && existingSfAppointment.notes != null) {
+      // Reconstruct CalendarAppointment from Syncfusion Appointment notes for your dialog
+      final AppointmentModel originalApptModel = AppointmentModel.fromJson(jsonDecode(existingSfAppointment.notes!));
+
+      print('Parsed originalApptModel appointmentId: ${originalApptModel.appointmentId}');
+
+
+      final CalendarAppointment tempCalendarAppt = CalendarAppointment(
+        date: existingSfAppointment.startTime, // Use startTime for the date
+        startTime: existingSfAppointment.startTime,
+        endTime: existingSfAppointment.endTime,
+        title: existingSfAppointment.subject,
+        color: existingSfAppointment.color,
+        appointmentId: originalApptModel.appointmentId,
+        patientId: originalApptModel.patientId,
+        visitType: originalApptModel.visitType,
+        patientName: originalApptModel.patientName,
+        status: originalApptModel.status,
+        type: originalApptModel.visitType == 'leave' ? 'leave' : 'booked', // Adjust type if needed
+      );
+
+      print('tempCalendarAppt appointmentId: ${tempCalendarAppt.appointmentId}');
+      controller.selectExistingAppointment(tempCalendarAppt);
     } else {
       controller.clearAppointmentSelection();
     }
@@ -532,7 +541,7 @@ class _BookingCalenderViewState extends State<BookingCalenderView> {
     Get.bottomSheet(
       BookAppointmentCustomDialog(
         controller: controller,
-        isEdit: existingAppointment != null,
+        isEdit: existingSfAppointment != null,
       ),
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
@@ -542,268 +551,539 @@ class _BookingCalenderViewState extends State<BookingCalenderView> {
     );
   }
 
+  // NEW: Helper method to handle the tap on the redesigned appointment card
+  void _onAppointmentCardTap(CalendarAppointment event, AppointmentController controller, DateTime eventDateTime) {
+
+    final String startTimeStr = DateFormat('HH:mm').format(event.startTime);
+    final String endTimeStr = DateFormat('HH:mm').format(event.endTime);
+
+    final Appointment sfAppointmentForDialog = Appointment(
+      // startTime: DateFormat('HH:mm').parse(event.start)
+      //     .copyWith(year: eventDateTime.year, month: eventDateTime.month, day: eventDateTime.day),
+      // endTime: DateFormat('HH:mm').parse(event.end)
+      //     .copyWith(year: eventDateTime.year, month: eventDateTime.month, day: eventDateTime.day),
+      startTime: event.startTime,
+      endTime: event.endTime,
+      subject: event.title,
+      color: Colors.transparent, // Color is not relevant for dialog open, but needed
+      notes: jsonEncode(AppointmentModel(
+        appointmentId: event.appointmentId,
+        patientId: event.patientId,
+        patientName: event.patientName,
+        visitType: event.visitType,
+        date: DateFormat('yyyy-MM-dd').format(eventDateTime),
+        // timeSlot: TimeSlot(start: event.start, end: event.end),
+        timeSlot: TimeSlot(start: startTimeStr, end: endTimeStr),
+        status: event.status,
+        staffId: controller.selectedStaffId.value,
+      ).toJson()),
+    );
+
+    _openBookingBottomSheet(context, controller, existingSfAppointment: sfAppointmentForDialog);
+  }
+
+  // REDESIGNED: _buildBottomEventList to use card layout
   Widget _buildBottomEventList(AppointmentController controller) {
     return Obx(() {
       if (controller.bookedSlots.isEmpty) {
-        return const Padding(
-          padding: EdgeInsets.all(16),
+        return Padding(
+          padding: const EdgeInsets.all(16),
           child: Text(
-            "No appointments for this day.",
-            style: TextStyle(fontSize: 14),
+            "No appointments found for ${DateFormat('MMMM dd, yyyy').format(controller.selectedDate.value)}.",
+            style: const TextStyle(fontSize: 14, color: Colors.grey),
           ),
         );
       }
 
-      return ListView.separated(
+      return ListView.builder(
         shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
         itemCount: controller.bookedSlots.length,
-        separatorBuilder: (_, __) => const Divider(height: 1),
         itemBuilder: (context, index) {
           final event = controller.bookedSlots[index];
 
-          // Determine background color based on type/status
-          Color bgColor;
-          Color textColor = Colors.white;
+          Color dateBgColor;
+
+          // Determine the color based on the status/type for the date box
           if (event.type == 'booked') {
             if (event.status == 'COMPLETED') {
-              bgColor = Get.theme.primaryColor;
+              dateBgColor = Colors.lightBlue.shade100; // Light blue/teal for completed
             } else if (event.status == 'CONFIRMED') {
-              bgColor = Colors.green.shade600;
+              dateBgColor = Colors.green.shade100; // Light green for confirmed
+            } else if (event.status == 'PENDING') {
+              dateBgColor = Colors.yellow.shade100; // Light yellow/amber for pending
             } else {
-              bgColor = Colors.grey.shade600;
+              dateBgColor = Colors.grey.shade300; // Fallback
             }
           } else if (event.type == 'leave') {
-            bgColor = Colors.blueGrey.shade600;
+            dateBgColor = Colors.blueGrey.shade100; // Light blue-grey for leave
           } else {
-            bgColor = Colors.red.shade400;
+            dateBgColor = Colors.red.shade100; // Fallback for unknown type
           }
+          const Color dateTextColor = Colors.black87;
 
-          return ListTile(
-            tileColor: bgColor,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            title: Text(
-              event.title,
-              style: TextStyle(color: textColor, fontWeight: FontWeight.w500),
-            ),
-            subtitle: Text(
-              "${event.start} - ${event.end}",
-              style: TextStyle(color: textColor.withOpacity(0.8), fontSize: 12),
-            ),
+          // Recreate the full event date from selectedDate and the time
+          // final DateTime eventDateTime = DateFormat('HH:mm').parse(event.start)
+          //     .copyWith(year: controller.selectedDate.value.year, month: controller.selectedDate.value.month, day: controller.selectedDate.value.day);
+          final DateTime selectedDate = controller.selectedDate.value;
+          DateTime eventStartTime;
+          DateTime eventEndTime;
+          try {
+            final startParts = event.start.split(':');
+            eventStartTime = DateTime(selectedDate.year, selectedDate.month, selectedDate.day, int.parse(startParts[0]), int.parse(startParts[1]));
+
+            final endParts = event.end.split(':');
+            eventEndTime = DateTime(selectedDate.year, selectedDate.month, selectedDate.day, int.parse(endParts[0]), int.parse(endParts[1]));
+
+          } catch (_) {
+            eventStartTime = selectedDate;
+            eventEndTime = selectedDate.add(const Duration(minutes: 30));
+          }
+          final DateTime eventDateTime = eventStartTime;
+
+          return GestureDetector(
+            // onTap: () {
+            //   // Tap on the whole card opens the edit dialog
+            //   // _onAppointmentCardTap(event, controller, eventDateTime);
+            //   final CalendarAppointment calendarAppt = CalendarAppointment.fromEvent(event, controller.selectedDate.value);
+            //   _onAppointmentCardTap(calendarAppt, controller, eventDateTime);
+            // },
             onTap: () {
-              // Optional: open booking bottom sheet to edit this appointment
-              _openBookingBottomSheet(context, controller, existingAppointment: CalendarAppointment(
-                  date: controller.selectedDate.value,
-                appointmentId: event.id,
-                patientId: event.patientId,
-                visitType: event.visitType,
-                startTime: DateFormat('HH:mm').parse(event.start ?? '00:00'),
-                endTime: DateFormat('HH:mm').parse(event.end ?? '00:00'),
-                title: event.title,
 
-              ));
+              final Appointment sfAppointmentForDialog = Appointment(
+                startTime: DateFormat('HH:mm').parse(event.start)
+                    .copyWith(year: controller.selectedDate.value.year, month: controller.selectedDate.value.month, day: controller.selectedDate.value.day),
+                endTime: DateFormat('HH:mm').parse(event.end)
+                    .copyWith(year: controller.selectedDate.value.year, month: controller.selectedDate.value.month, day: controller.selectedDate.value.day),
+                subject: event.title,
+                // color: bgColor, // Use the determined background color
+                color: Colors.transparent,
+                notes: jsonEncode(AppointmentModel(
+                  appointmentId: event.id,
+                  patientId: event.patientId,
+                  patientName: event.patientName,
+                  visitType: event.visitType,
+                  date: DateFormat('yyyy-MM-dd').format(controller.selectedDate.value),
+                  timeSlot: TimeSlot(start: event.start, end: event.end),
+                  status: event.status,
+                  staffId: controller.selectedStaffId.value,
+                ).toJson()),
+              );
+
+              _openBookingBottomSheet(context, controller, existingSfAppointment: sfAppointmentForDialog);
             },
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.15),
+                    spreadRadius: 0,
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Left Colored Date/Day Block (e.g., '12 Tue')
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      color: dateBgColor,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          '${eventDateTime.day}',
+                          style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: dateTextColor),
+                        ),
+                        Text(
+                          _weekdayString(eventDateTime),
+                          style: TextStyle(fontSize: 12, color: dateTextColor.withOpacity(0.8)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  // Center Patient Info (Name and Phone)
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          event.type == "booked" ? event.patientName??'' : event.title,
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        // Text(
+                        //   ' ${event.type ?? ''}', // Patient ID used as a placeholder for phone number
+                        //   style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                        // ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.shade50, // Light blue background for time
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            // FIX: Format the calculated DateTime to match the "12.30 pm" look.
+                            '${DateFormat('h:mm a').format(eventStartTime)} - ${DateFormat('h:mm a').format(eventEndTime)}',
+                            style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: Get.theme.primaryColor),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Right Time and Options
+                  // Row(
+                  //   children: [
+                  //     Container(
+                  //       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  //       decoration: BoxDecoration(
+                  //         color: Colors.blue.shade50, // Light blue background for time
+                  //         borderRadius: BorderRadius.circular(4),
+                  //       ),
+                  //       child: Text(
+                  //         // FIX: Format the calculated DateTime to match the "12.30 pm" look.
+                  //         DateFormat('h:mm a').format(eventStartTime),
+                  //         style: TextStyle(
+                  //             fontSize: 14,
+                  //             fontWeight: FontWeight.w500,
+                  //             color: Get.theme.primaryColor),
+                  //       ),
+                  //     ),
+                  //     const SizedBox(width: 4),
+                  //     // const Icon(Icons.more_vert, color: Colors.grey, size: 24),
+                  //     // The more_vert icon is visual only, the whole card is clickable
+                  //   ],
+                  // ),
+                ],
+              ),
+            ),
           );
         },
       );
     });
   }
 
+  // NEW: Custom Calendar Header Widget
+  Widget _buildCustomCalendarHeader(BuildContext context) {
+    // Uses Obx to re-render the month/year when the displayDate changes
 
-  /// Custom month cell builder: day number, dots for appointments, highlight selected date
-  Widget _monthCellBuilder(BuildContext context, MonthCellDetails details) {
-    final DateTime date = details.date;
-    final bool isToday = date.year == DateTime.now().year &&
-        date.month == DateTime.now().month &&
-        date.day == DateTime.now().day;
-    final bool isSelected = date.year == _selectedDate.year &&
-        date.month == _selectedDate.month &&
-        date.day == _selectedDate.day;
+      final DateTime displayDate = _calendarController.displayDate ?? controller.selectedDate.value;
 
-    // Build dots based on appointments count for that day
-    final allAppointments = _buildSfAppointments();
-    final dayAppts = _appointmentsForDay(date, allAppointments);
-    // show up to 3 dots with their colors
-    final dots = dayAppts.take(3).map((a) => a.color ?? Colors.blue).toList();
-
-    return GestureDetector(
-      onTap: () {
-        // Ignore taps on days outside current month? syncfusion passes details
-        setState(() {
-          _selectedDate = DateTime(date.year, date.month, date.day);
-        });
-        controller.selectedDate.value = _selectedDate;
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.blue.withOpacity(0.12) : Colors.transparent,
-          border: Border.all(color: Colors.grey.shade200),
-        ),
-        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-        child: Column(
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Align(
-              alignment: Alignment.topCenter,
-              child: Text(
-                '${date.day}',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
-                  // color: (details.isDateOutsideMonth || date.isBefore(DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day)))
-                  //     ? Colors.grey
-                  //     : Colors.black,
-                  color: (details.date.month != details.visibleDates[10].month ||
-                      date.isBefore(DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day)))
-                      ? Colors.grey
-                      : Colors.black,
-                ),
+            Text(
+              DateFormat('MMMM yyyy').format(displayDate).toUpperCase(),
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
               ),
             ),
-            const Spacer(),
-            // Dots row
-            if (dots.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: dots
-                      .map((c) => Container(
-                    width: 6,
-                    height: 6,
-                    margin: const EdgeInsets.symmetric(horizontal: 2),
-                    decoration: BoxDecoration(color: c, shape: BoxShape.circle),
-                  ))
-                      .toList(),
+            Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.chevron_left, size: 24, color: Colors.black87),
+                  onPressed: () {
+                    _calendarController.backward!();
+                    // Manually trigger month change logic if needed
+                    if (_calendarController.displayDate != null) {
+                      controller.onMonthChanged(_calendarController.displayDate!);
+                    }
+                  },
                 ),
-              ),
-            if (dayAppts.length > 3)
-              Text('+${dayAppts.length - 3}',
-                  style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold)),
+                IconButton(
+                  icon: const Icon(Icons.chevron_right, size: 24, color: Colors.black87),
+                  onPressed: () {
+                    _calendarController.forward!();
+                    // Manually trigger month change logic if needed
+                    if (_calendarController.displayDate != null) {
+                      controller.onMonthChanged(_calendarController.displayDate!);
+                    }
+                  },
+                ),
+              ],
+            ),
           ],
         ),
-      ),
-    );
+      );
+
   }
 
   @override
   Widget build(BuildContext context) {
-    // Build appointments list reactively on each build. If your controller has reactive lists,
-    // you may prefer to use Obx to rebuild only when needed.
-    final allAppointments = _buildSfAppointments();
-    final selectedDayAppointments = _appointmentsForDay(_selectedDate, allAppointments);
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Choose Appointment Date")),
+      appBar: AppBar(
+        title: Text(Global.role == 3
+            ? "My Schedule"
+            : (widget.doctor?.firstname ?? "Doctor's") + " Schedule"),
+      ),
       body: Column(
         children: [
-          // Calendar month view
-          SizedBox(
-            height: 420, // adjust to match screenshot's area
-            child: SfCalendar(
-              view: CalendarView.month,
-              dataSource: _AppointmentDataSource(allAppointments),
-              monthViewSettings: MonthViewSettings(
-                appointmentDisplayMode: MonthAppointmentDisplayMode.none,
-                showAgenda: false,
-                // custom cell builder to show dots and selected highlight
-              ),
-              monthCellBuilder: (BuildContext context, MonthCellDetails details) {
-                return _monthCellBuilder(context, details);
-              },
-              onTap: (CalendarTapDetails details) {
-                if (details.targetElement == CalendarElement.calendarCell ||
-                    details.targetElement == CalendarElement.appointment) {
-                  final DateTime tappedDate = details.date ?? DateTime.now();
-                  setState(() {
-                    _selectedDate = DateTime(tappedDate.year, tappedDate.month, tappedDate.day);
-                  });
-                  controller.selectedDate.value = _selectedDate;
 
-                  // If an appointment was tapped (Syncfusion returns appointments in args)
-                  if (details.appointments != null && details.appointments!.isNotEmpty) {
-                    final Appointment first = details.appointments!.first as Appointment;
-                    final original = first.notes; // original model stored
-                    // select and open bottomsheet in edit mode
-                    // _openBookingBottomSheet(originalAppointmentModel: original, isEdit: true);
-                    _openBookingBottomSheet(
-                      context,
-                      controller,
-                      existingAppointment: CalendarAppointment(
-                        appointmentId: original != null ? jsonDecode(original)['id'] : '',
-                        patientId: original != null ? jsonDecode(original)['patientId'] : '',
-                        visitType: original != null ? jsonDecode(original)['visitType'] : '',
-                        startTime: original != null
-                            ? DateFormat('HH:mm').parse(jsonDecode(original)['start'])
-                            : DateTime.now(),
-                        endTime: original != null
-                            ? DateFormat('HH:mm').parse(jsonDecode(original)['end'])
-                            : DateTime.now().add(const Duration(hours: 1)),
-                        title: original != null ? jsonDecode(original)['title'] : 'Appointment',
-                        date: (original != null && jsonDecode(original)['date'] != null)
-                            ? DateTime.parse(jsonDecode(original)['date'])
-                            : DateTime.now(),
+          // REDESIGNED Calendar Section
+          SizedBox(
+            height: 380, // Reduced height to fit the custom header better
+            child: Obx(() {
+
+              final List<Appointment> allSfAppointments = controller.sfCalendarAppointments.toList();
+
+              return Column(
+                children: [
+                  _buildCustomCalendarHeader(context), // Custom Header (matches image)
+
+                  // SfCalendar
+                  Expanded(
+                    child: SfCalendar(
+                      controller: _calendarController, // ADDED: Controller
+                      view: CalendarView.month,
+              viewHeaderStyle: ViewHeaderStyle(
+                dayTextStyle: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                  color: Colors.grey,
+                ),
+
+              ///            backgroundColor: Colors.blue,
+              ///            dayTextStyle: TextStyle(color: Colors.grey, fontSize: 20),
+              ///            dateTextStyle: TextStyle(color: Colors.grey, fontSize: 25)),
+                  ),
+                      dataSource: AppointmentDataSource(allSfAppointments),
+                      monthViewSettings: const MonthViewSettings(
+                        appointmentDisplayMode: MonthAppointmentDisplayMode.none,
+                        showAgenda: false,
+                        dayFormat: 'EEE', // Show day names like MON, TUE etc.
+                        numberOfWeeksInView: 6, // Ensure full month is visible
+                        showTrailingAndLeadingDates: true,
+                        // Custom style for day headers (Sun, Mon, Tue...)
+
                       ),
-                    );
-                  }
-                }
-              },
-              // optional: month cell border and header customization
-              headerHeight: 60,
-              todayHighlightColor: Get.theme.primaryColor,
-              showDatePickerButton: false,
-            ),
+                      onViewChanged: (ViewChangedDetails details) {
+                        final DateTime middleDate = details.visibleDates[details.visibleDates.length ~/ 2];
+                        controller.onMonthChanged(middleDate);
+                        // Update controller's display date for custom header refresh
+                        _calendarController.displayDate = middleDate;
+                      },
+                      monthCellBuilder: (BuildContext context, MonthCellDetails details) {
+                        // All dots/indicators removed to match the clean UI of the image
+                        final eventsForDate = _sfAppointmentsForDay(details.date, allSfAppointments);
+
+                        final bool isSelectedDate = isSameDay(details.date, controller.selectedDate.value);
+                        final bool isCurrentMonth = details.date.month == controller.selectedDate.value.month;
+
+                        // NEW: Custom style to match the image's calendar grid look
+                        return Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey[200]!, width: 0.5), // Subtle borders
+                            color: Colors.white,
+                          ),
+                          child: Stack(
+                            children: [
+                              Center(
+                                child: Container(
+                                  width: 36,
+                                  height: 36,
+                                  decoration: isSelectedDate
+                                      ? BoxDecoration(
+                                    color: Colors.grey.shade200, // Blue circle for selected date (matches image)
+                                    shape: BoxShape.circle,
+                                  )
+                                      : null,
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    '${details.date.day}',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: isSelectedDate
+                                          ? Colors.black87 // White text for selected date
+                                          : isCurrentMonth
+                                          ? Colors.black87 // Black for current month dates
+                                          : Colors.grey, // Grey for outside dates
+                                      fontWeight: FontWeight.normal,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              if (eventsForDate.isNotEmpty)
+                                Positioned(
+                                  bottom: 5,
+                                  left: 0,
+                                  right: 0,
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: eventsForDate.take(3).map((sfAppointment) {
+                                      Color dotColor = Colors.blue;
+                                      if (sfAppointment.notes != null) {
+                                        final AppointmentModel apptModel = AppointmentModel.fromJson(jsonDecode(sfAppointment.notes!));
+                                        // Simplified color logic for dots
+                                        if (apptModel.status == 'leave' || apptModel.visitType == 'leave') {
+                                          dotColor = Colors.grey;
+                                        } else if (apptModel.status == 'CONFIRMED') {
+                                          dotColor = Colors.green;
+                                        } else if (apptModel.status == 'PENDING') {
+                                          dotColor = Colors.orange;
+                                        } else if (apptModel.status == 'COMPLETED') {
+                                          dotColor = Get.theme.primaryColor;
+                                        }
+                                      }
+                                      return Container(
+                                        width: 5,
+                                        height: 5,
+                                        margin: const EdgeInsets.symmetric(horizontal: 1),
+                                        decoration: BoxDecoration(
+                                          color: dotColor,
+                                          shape: BoxShape.circle,
+                                        ),
+                                      );
+                                    }).toList(),
+                                  ),
+                                ),
+                            ],
+                          ),
+
+                        );
+                      },
+                      onTap: (CalendarTapDetails details) {
+                        if (details.targetElement == CalendarElement.calendarCell) {
+                          final DateTime tappedDate = details.date ?? DateTime.now();
+                          controller.selectedDate.value =
+                              DateTime(tappedDate.year, tappedDate.month, tappedDate.day);
+                          // Force calendar to re-render to update the blue circle
+                          _calendarController.selectedDate = controller.selectedDate.value;
+                        } else if (details.targetElement == CalendarElement.appointment) {
+                          final Appointment sfAppointment = details.appointments!.first as Appointment;
+                          _openBookingBottomSheet(context, controller, existingSfAppointment: sfAppointment);
+                        }
+                      },
+                      headerHeight: 0, // HIDING the default header
+                      todayHighlightColor: Colors.transparent,
+                      showDatePickerButton: false,
+                    ),
+                  ),
+                ],
+              );
+            }),
           ),
 
-          // Selected date indicator + bottom list
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            color: Colors.white,
-            child: Row(
+
+          // REDESIGNED Upcoming Appointments Section
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundColor: Get.theme.primaryColor,
-                  child: Text(
-                    '${_selectedDate.day}',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                // "Upcoming Appointments" Header (matches image)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        "Appointments",
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+                      ),
+                      // TextButton(
+                      //   onPressed: () {
+                      //     // Functionality remains the same, assuming 'See more' would open a full list
+                      //     print('See more tapped');
+                      //   },
+                      //   style: TextButton.styleFrom(
+                      //     padding: EdgeInsets.zero,
+                      //     minimumSize: const Size(50, 30),
+                      //     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      //   ),
+                      //   child: Text("See more", style: TextStyle(color: Get.theme.primaryColor)),
+                      // ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${_weekdayString(_selectedDate)}, ${_monthDayString(_selectedDate)}',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 2),
-                    Text('${selectedDayAppointments.length} appointments'),
-                  ],
+
+                // Appointment List or Loading Indicator
+                Obx(() => controller.isLoading.value && controller.bookedSlots.isEmpty
+                    ? const Center(child: Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: CircularProgressIndicator(),
+                ))
+                    : Expanded(
+                  child: SingleChildScrollView(
+                    child: _buildBottomEventList(controller), // Using the redesigned list builder
+                  ),
+                )
                 ),
               ],
             ),
           ),
-
-          // Bottom list - scrollable
-          Expanded(
-            child: SingleChildScrollView(
-              child: _buildBottomEventList(controller),
-            ),
-          ),
-
-          // Loading indicator from controller if present
-          Obx(() => controller.isLoading.value
-              ? const Padding(
-            padding: EdgeInsets.all(8.0),
-            child: CircularProgressIndicator(),
-          )
-              : const SizedBox.shrink()),
         ],
+      ),
+
+      // REDESIGNED Floating Action Button
+      floatingActionButton: Obx(() => (controller.isPastSelectedDate.value)
+          ? const SizedBox.shrink() // If selected date is in the past, hide the FAB
+          :
+      FloatingActionButton(
+        onPressed: () {
+          _openBookingBottomSheet(context, controller);
+        },
+        backgroundColor: Get.theme.primaryColor,
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Icon(Icons.add, size: 28), // Add icon instead of "+"
+      ),
+      // FloatingActionButton.extended(
+      //   onPressed: () {
+      //     // Open the booking bottom sheet for a new appointment
+      //     _openBookingBottomSheet(context, controller);
+      //   },
+      //   label: const Text(
+      //     "+ Book Appointment",
+      //     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+      //   ),
+      //   icon: const SizedBox.shrink(),
+      //   backgroundColor: Get.theme.primaryColor, // Use a solid blue color
+      //   foregroundColor: Colors.white,
+      //   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      // ),
       ),
     );
   }
 
+  bool isSameDay(DateTime dateA, DateTime dateB) {
+    return dateA.year == dateB.year &&
+        dateA.month == dateB.month &&
+        dateA.day == dateB.day;
+  }
+
   String _weekdayString(DateTime d) {
     const names = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    // The DateTime.weekday returns 1 for Mon, ..., 7 for Sun. The array is 0-indexed starting with Sun.
+    // d.weekday % 7 will be 1 for Mon, 2 for Tue, ..., 6 for Sat, 0 for Sun.
+    // Need to adjust the index: (d.weekday) % 7 returns 1 for Mon, 0 for Sun. We want 0 for Sun, 1 for Mon.
     return names[d.weekday % 7];
   }
 
@@ -827,8 +1107,33 @@ class _BookingCalenderViewState extends State<BookingCalenderView> {
 }
 
 /// Simple CalendarDataSource wrapper for sfcalendar
-class _AppointmentDataSource extends CalendarDataSource {
-  _AppointmentDataSource(List<Appointment> source) {
+class AppointmentDataSource extends CalendarDataSource {
+  AppointmentDataSource(List<Appointment> source) {
     appointments = source;
+  }
+
+  @override
+  DateTime getStartTime(int index) {
+    return appointments![index].startTime;
+  }
+
+  @override
+  DateTime getEndTime(int index) {
+    return appointments![index].endTime;
+  }
+
+  @override
+  String getSubject(int index) {
+    return appointments![index].subject;
+  }
+
+  @override
+  Color getColor(int index) {
+    return appointments![index].color;
+  }
+
+  @override
+  bool isAllDay(int index) {
+    return appointments![index].isAllDay;
   }
 }

@@ -88,7 +88,8 @@ class LoginController extends GetxController {
         if (user["addedByAdmin"] == true && user["isPasswordChanged"] == true) {
           Get.offAllNamed("/change-password");
         } else {
-          Get.offAllNamed("/dashboard");
+          // Get.offAllNamed("/dashboard");
+          Get.offAllNamed("/profile");
         }
         // Get.offAllNamed("/dashboard");
       } else {

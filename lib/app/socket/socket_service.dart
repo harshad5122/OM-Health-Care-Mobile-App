@@ -8,7 +8,7 @@ class SocketService extends GetxService {
   final RxBool isConnected = false.obs;
 
   Future<void> connectSocket(String userId) async {
-    socket = IO.io('https://a2dd84de75d8.ngrok-free.app', <String, dynamic>{
+    socket = IO.io('https://9545738b300e.ngrok-free.app', <String, dynamic>{
       'transports': ['websocket'],
       'autoConnect': false,
     });
@@ -79,6 +79,12 @@ class SocketService extends GetxService {
   // void sendGroupMessage(GroupMessageModel messageData) {
   //   socket?.emit('chat_message', messageData);
   // }
+
+  void emitSendMessage(Map<String, dynamic> data) {
+    if (socket == null) return;
+    socket?.emit('chat_message', data);
+    print("Emitted 'chat_message': $data");
+  }
 
   void emitMessageSeen(String messageId, String userId) {
     socket?.emit('message_seen', {
@@ -161,6 +167,33 @@ class SocketService extends GetxService {
   //=========================
   // Event Listeners
   // =========================
+
+  void clearMessageListeners() {
+    socket?.off('message_ack');
+    socket?.off('chat_message');
+    socket?.off('message_updated');
+    socket?.off('message_deleted');
+    socket?.off('message_seen');
+    print("--- All message listeners cleared. ---");
+  }
+
+  void listenForMessageAck(Function(Map<String, dynamic> data) onAck) {
+    socket?.on('message_ack', (data) {
+      if (data is Map<String, dynamic>) {
+        print("✅ Message ACK received: $data");
+        onAck(data);
+      } else {
+        print("❗ Invalid Message ACK received: $data");
+      }
+    });
+  }
+
+  void listenForNewMessage(Function(dynamic data) onMessage) {
+    socket?.on('chat_message', (data) {
+      print("✅ New message received: $data");
+      onMessage(data);
+    });
+  }
 
 
   void listenForBroadcastCreated(Function(Map<String, dynamic>) onCreated) {

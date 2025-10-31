@@ -25,21 +25,8 @@ class DashboardPage extends StatelessWidget {
           Get.to(() => NotificationPage());
         },
       ),
-      // AppBar(
-      //   title: const Text("Dashboard"),
-      //   actions: [
-      //    IconButton(onPressed: () {
-      //
-      //    }, icon: Icon(Icons.notifications))
-      //   ],
-      //   leading: Builder(
-      //     builder: (context) => IconButton(
-      //       icon: const Icon(Icons.menu),
-      //       onPressed: () => Scaffold.of(context).openDrawer(),
-      //     ),
-      //   ),
-      // ),
-      drawer: const CustomDrawer(),
+
+      drawer: CustomDrawer(),
       body: const Center(
         child: Text(
           "Welcome to Dashboard!",

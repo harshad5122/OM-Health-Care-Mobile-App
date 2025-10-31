@@ -29,16 +29,18 @@ class AddDoctorController extends GetxController {
   final lastHospitalController = TextEditingController();
   final positionController = TextEditingController();
   final workHospitalAddressController = TextEditingController();
-  var workCity = "".obs;
+  final workCityController = TextEditingController();
+  // var workCity = "".obs;
   var workState = "".obs;
   var workCountry = "".obs;
   final workPincodeController = TextEditingController();
 
   // Address Info
   final addressController = TextEditingController();
-  var selectedCity = "".obs;
+  // var selectedCity = "".obs;
+  final cityController = TextEditingController();
   var selectedState = "".obs;
-  var selectedCountry = "".obs;
+  var selectedCountry = "India".obs;
   final pincodeController = TextEditingController();
 
   // Family
@@ -52,7 +54,8 @@ class AddDoctorController extends GetxController {
   // Permanent Address
   var sameAsCurrent = false.obs;
   final permAddressController = TextEditingController();
-  var permCity = "".obs;
+  final permCityController = TextEditingController();
+  // var permCity = "".obs;
   var permState = "".obs;
   var permCountry = "".obs;
   final permPincodeController = TextEditingController();
@@ -63,31 +66,71 @@ class AddDoctorController extends GetxController {
   final emergencyContactController = TextEditingController();
 
   // Dropdown options
-  final genders = ["male", "female", "other", "prefer not to say"];
+  final genders = ["Male", "Female", "Other"];
   final specializations = [
     "Cardiologist",
-    "Dermatologist",
-    "Neurologist",
+    "Dermatology",
+    "Pediatrics",
+    "Physiotherapy"
+    "Neurology",
+    "Gynecology"
     "Orthopedic",
-    "General"
+    "General Medicine"
   ];
-  final relations = ["spouse", "parent", "sibling", "other"];
+  final relations = ["Spouse", "Parent", "Sibling", "Other"];
   final countries = ["India", "USA", "UK"];
   final states = {
-    "India": ["Gujarat", "Maharashtra", "Delhi"],
+    "India": [
+      "Andhra Pradesh",
+      "Arunachal Pradesh",
+      "Assam",
+      "Bihar",
+      "Chhattisgarh",
+      "Goa",
+      "Gujarat",
+      "Haryana",
+      "Himachal Pradesh",
+      "Jharkhand",
+      "Karnataka",
+      "Kerala",
+      "Madhya Pradesh",
+      "Maharashtra",
+      "Manipur",
+      "Meghalaya",
+      "Mizoram",
+      "Nagaland",
+      "Odisha",
+      "Punjab",
+      "Rajasthan",
+      "Sikkim",
+      "Tamil Nadu",
+      "Telangana",
+      "Tripura",
+      "Uttar Pradesh",
+      "Uttarakhand",
+      "West Bengal",
+      "Andaman and Nicobar Islands",
+      "Chandigarh",
+      "Dadra and Nagar Haveli and Daman and Diu",
+      "Delhi",
+      "Jammu and Kashmir",
+      "Ladakh",
+      "Lakshadweep",
+      "Puducherry"
+    ],
     "USA": ["California", "Texas", "New York"],
     "UK": ["London", "Manchester"],
   };
-  final cities = {
-    "Gujarat": ["Ahmedabad", "Surat", "Rajkot"],
-    "Maharashtra": ["Mumbai", "Pune"],
-    "Delhi": ["New Delhi"],
-    "California": ["Los Angeles", "San Francisco"],
-    "Texas": ["Houston", "Dallas"],
-    "New York": ["New York City", "Buffalo"],
-    "London": ["London City"],
-    "Manchester": ["Manchester City"],
-  };
+  // final cities = {
+  //   "Gujarat": ["Ahmedabad", "Surat", "Rajkot"],
+  //   "Maharashtra": ["Mumbai", "Pune"],
+  //   "Delhi": ["New Delhi"],
+  //   "California": ["Los Angeles", "San Francisco"],
+  //   "Texas": ["Houston", "Dallas"],
+  //   "New York": ["New York City", "Buffalo"],
+  //   "London": ["London City"],
+  //   "Manchester": ["Manchester City"],
+  // };
 
   // Edit mode
   String? doctorId;
@@ -154,7 +197,8 @@ class AddDoctorController extends GetxController {
       if (work["workAddress"] != null) {
         final addr = work["workAddress"];
         workHospitalAddressController.text = addr["hospitalName"] ?? "";
-        workCity.value = addr["city"] ?? "";
+        // workCity.value = addr["city"] ?? "";
+        workCityController.text = addr["city"] ?? "";
         workState.value = addr["state"] ?? "";
         workCountry.value = addr["country"] ?? "";
         workPincodeController.text = addr["pincode"] ?? "";
@@ -163,7 +207,8 @@ class AddDoctorController extends GetxController {
 
     // Address
     addressController.text = doctor["address"] ?? "";
-    selectedCity.value = doctor["city"] ?? "";
+    // selectedCity.value = doctor["city"] ?? "";
+    cityController.text = doctor["city"] ?? "";
     selectedState.value = doctor["state"] ?? "";
     selectedCountry.value = doctor["country"] ?? "";
     pincodeController.text = doctor["pincode"] ?? "";
@@ -184,7 +229,8 @@ class AddDoctorController extends GetxController {
       if (fam["permanentAddress"] != null) {
         final perm = fam["permanentAddress"];
         permAddressController.text = perm["line1"] ?? "";
-        permCity.value = perm["city"] ?? "";
+        // permCity.value = perm["city"] ?? "";
+        permCityController.text = perm["city"] ?? "";
         permState.value = perm["state"] ?? "";
         permCountry.value = perm["country"] ?? "";
         permPincodeController.text = perm["pincode"] ?? "";
@@ -213,8 +259,10 @@ class AddDoctorController extends GetxController {
     lastHospitalController.clear();
     positionController.clear();
     workHospitalAddressController.clear();
+    workCityController.clear();
     workPincodeController.clear();
     addressController.clear();
+    cityController.clear();
     pincodeController.clear();
     fatherNameController.clear();
     fatherContactController.clear();
@@ -223,6 +271,7 @@ class AddDoctorController extends GetxController {
     motherContactController.clear();
     motherOccupationController.clear();
     permAddressController.clear();
+    permCityController.clear();
     permPincodeController.clear();
     emergencyNameController.clear();
     emergencyContactController.clear();
@@ -231,13 +280,13 @@ class AddDoctorController extends GetxController {
     selectedGender.value = "";
     selectedSpecialization.value = "";
     professionalStatus.value = "experienced";
-    selectedCity.value = "";
+    // selectedCity.value = "";
     selectedState.value = "";
     selectedCountry.value = "";
-    workCity.value = "";
+    // workCity.value = "";
     workState.value = "";
     workCountry.value = "";
-    permCity.value = "";
+    // permCity.value = "";
     permState.value = "";
     permCountry.value = "";
     emergencyRelation.value = "";
@@ -252,14 +301,16 @@ class AddDoctorController extends GetxController {
       permAddressController.text = addressController.text;
       permCountry.value = selectedCountry.value;
       permState.value = selectedState.value;
-      permCity.value = selectedCity.value;
+      // permCity.value = selectedCity.value;
+      permCityController.text = cityController.text;
       permPincodeController.text = pincodeController.text;
     } else {
       // Clear if unchecked (optional)
       permAddressController.clear();
       permCountry.value = "";
       permState.value = "";
-      permCity.value = "";
+      // permCity.value = "";
+      permCityController.clear();
       permPincodeController.clear();
     }
   }
@@ -401,7 +452,7 @@ class AddDoctorController extends GetxController {
         "position": positionController.text,
         "workAddress": {
           "hospitalName": workHospitalAddressController.text,
-          "city": workCity.value,
+          "city": workCityController.text,
           "state": workState.value,
           "country": workCountry.value,
           "pincode": workPincodeController.text,
@@ -409,7 +460,7 @@ class AddDoctorController extends GetxController {
       }
           : null,
       "address": addressController.text,
-      "city": selectedCity.value,
+      "city": cityController.text,
       "state": selectedState.value,
       "country": selectedCountry.value,
       "pincode": pincodeController.text,
@@ -426,7 +477,7 @@ class AddDoctorController extends GetxController {
         },
         "permanentAddress": {
           "line1": permAddressController.text,
-          "city": permCity.value,
+          "city": permCityController.text,
           "state": permState.value,
           "country": permCountry.value,
           "pincode": permPincodeController.text,
@@ -480,9 +531,9 @@ class AddDoctorController extends GetxController {
 
         if (isEditMode.value) {
           if (data["success"] == 1 || data["code"] == 200) {
-            Get.snackbar("Success", data["msg"] ?? "Doctor updated successfully");
+            // Get.snackbar("Success", data["msg"] ?? "Doctor updated successfully");
             Get.back(result: true);
-            Get.toNamed("/member");
+            // Get.toNamed("/member");
           } else {
             Get.snackbar("Error", data["msg"] ?? "Failed to update doctor");
           }

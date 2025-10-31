@@ -39,6 +39,10 @@ class LeaveController extends GetxController {
   final customFrom = Rxn<DateTime>();
   final customTo = Rxn<DateTime>();
 
+  final currentFilterDateRange = DateRangeOption.thisMonth.obs;
+  final filterFromDate = Rxn<DateTime>();
+  final filterToDate = Rxn<DateTime>();
+
   final staffId = ''.obs;
 
   var loggedInUserId = ''.obs;
@@ -50,31 +54,11 @@ class LeaveController extends GetxController {
   RxString selectedStatus = 'PENDING'.obs;
 
   DateTime get fromDate {
-    final now = DateTime.now();
-    switch (dateRangeOption.value) {
-      case DateRangeOption.thisMonth:
-        return DateTime(now.year, now.month, 1);
-      case DateRangeOption.lastMonth:
-        return DateTime(now.year, now.month - 1, 1);
-      case DateRangeOption.thisWeek:
-        return now.subtract(Duration(days: now.weekday - 1));
-      case DateRangeOption.custom:
-        return customFrom.value ?? now;
-    }
+    return filterFromDate.value ?? DateTime.now();
   }
 
   DateTime get toDate {
-    final now = DateTime.now();
-    switch (dateRangeOption.value) {
-      case DateRangeOption.thisMonth:
-        return DateTime(now.year, now.month + 1, 0);
-      case DateRangeOption.lastMonth:
-        return DateTime(now.year, now.month, 0);
-      case DateRangeOption.thisWeek:
-        return now.add(Duration(days: 7 - now.weekday));
-      case DateRangeOption.custom:
-        return customTo.value ?? now;
-    }
+    return filterToDate.value ?? DateTime.now();
   }
 
   @override
@@ -83,41 +67,53 @@ class LeaveController extends GetxController {
     _loadUserData();
     // fetchLeaveRecords();
     // appointmentController.fetchDoctors();
+    _updateFilterDatesForOption(DateRangeOption.thisMonth);
+
+    // React to changes in currentFilterDateRange and update filterFromDate/filterToDate accordingly
+    ever(currentFilterDateRange, (DateRangeOption option) {
+      if (option != DateRangeOption.custom) {
+        _updateFilterDatesForOption(option);
+      }
+      // fetchLeaveRecords();
+    });
+  }
+
+  void _updateFilterDatesForOption(DateRangeOption option) {
+    final now = DateTime.now();
+    DateTime from;
+    DateTime to;
+
+    switch (option) {
+      case DateRangeOption.thisMonth:
+        from = DateTime(now.year, now.month, 1);
+        to = DateTime(now.year, now.month + 1, 0);
+        break;
+      case DateRangeOption.lastMonth:
+        final lastMonthStart = DateTime(now.year, now.month - 1, 1);
+        from = lastMonthStart;
+        to = DateTime(lastMonthStart.year, lastMonthStart.month + 1, 0);
+        break;
+      case DateRangeOption.thisWeek:
+        from = now.subtract(Duration(days: now.weekday - 1));
+        to = from.add(const Duration(days: 6));
+        break;
+      case DateRangeOption.custom:
+      // For custom, filterFromDate and filterToDate are directly set by DateSelectorController
+        return; // No need to calculate here, values are already set
+    }
+    filterFromDate.value = from;
+    filterToDate.value = to;
   }
 
   void selectDoctor(StaffListModel? d) {
     selectedDoctor.value = d;
   }
 
-  // void changeDateRange(DateRangeOption option) {
-  //   dateRangeOption.value = option;
-  //   if (option != DateRangeOption.custom) {
-  //     customFrom.value = null;
-  //     customTo.value = null;
-  //   }
-  // }
-
-  void changeDateRange(DateRangeOption option) {
-    dateRangeOption.value = option;
-    if (option != DateRangeOption.custom) {
-      customFrom.value = null;
-      customTo.value = null;
-    }
-
-    if (!isAdmin.value) {
-      fetchLeaveRecords();
-    }
-  }
-
-  void setCustomRange(DateTime from, DateTime to) {
-    customFrom.value = from;
-    customTo.value = to;
-    dateRangeOption.value = DateRangeOption.custom;
-  }
-
   void clearFiltersAndLeaves() {
     selectedDoctor.value = null;
-    dateRangeOption.value = DateRangeOption.thisMonth;
+    // dateRangeOption.value = DateRangeOption.thisMonth;
+    currentFilterDateRange.value = DateRangeOption.thisMonth;
+    _updateFilterDatesForOption(DateRangeOption.thisMonth);
     leaveRecords.clear();
   }
 
@@ -146,7 +142,8 @@ class LeaveController extends GetxController {
   }
 
   Future<void> selectDate(BuildContext context, bool isStart) async {
-    DateTime initialDate = DateTime.now();
+    DateTime now = DateTime.now();
+    DateTime initialDate = now;
     if (isStart && startDate.value != null) {
       initialDate = startDate.value!;
     } else if (!isStart && endDate.value != null) {
@@ -156,8 +153,27 @@ class LeaveController extends GetxController {
     DateTime? picked = await showDatePicker(
       context: context,
       initialDate: initialDate,
-      firstDate: DateTime.now().subtract(const Duration(days: 365)), // Allow past dates for historical applications
+      firstDate: now,
+      // firstDate: DateTime.now().subtract(const Duration(days: 365)), // Allow past dates for historical applications
       lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
+      builder: (BuildContext context, Widget? child) {
+        // Optional: make it match your app’s theme
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: Theme.of(context).primaryColor,
+              onPrimary: Colors.white,
+              onSurface: Colors.black,
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: Theme.of(context).primaryColor,
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
 
     if (picked != null) {
@@ -178,6 +194,12 @@ class LeaveController extends GetxController {
 
     if (adminId.value.isEmpty || adminName.value.isEmpty) {
       Get.snackbar('Error', 'Please select an Admin.');
+      return;
+    }
+
+    bool hasConflict = await _isLeaveConflict(startDate.value!, endDate.value!, selectedLeaveType.value);
+    if (hasConflict) {
+      Get.snackbar('Error', 'A leave already exists for this date and leave type.');
       return;
     }
 
@@ -213,7 +235,7 @@ class LeaveController extends GetxController {
       if (response.statusCode == 200) {
         final createLeaveResponse = createLeaveResponseFromJson(response.body);
         if (createLeaveResponse.success == 1) {
-          Get.snackbar('Success', createLeaveResponse.msg,);
+          Get.snackbar('Success', 'Leave applied successfully!',);
           // Clear form and refresh records
           _resetApplyLeaveForm();
           fetchLeaveRecords();
@@ -272,19 +294,37 @@ class LeaveController extends GetxController {
     isFetchingRecords.value = true;
     try {
       final token = await TokenStorage.getToken();
-      final from = DateFormat('yyyy-MM-dd').format(fromDate);
-      final to = DateFormat('yyyy-MM-dd').format(toDate);
-      final staffId = isAdmin.value
-          ? selectedDoctor.value?.id
-          : Global.staffId;
-      // final staffId = selectedDoctor.value!.id;
 
-      if (staffId == null || staffId.isEmpty) {
-        Get.snackbar('Error', 'Staff ID is not available.');
+      if (filterFromDate.value == null || filterToDate.value == null) {
+        Get.snackbar('Error', 'Date range not selected for leave records.');
+        isFetchingRecords.value = false;
         return;
       }
+
+
+      final from = DateFormat('yyyy-MM-dd').format(filterFromDate.value!);
+      final to = DateFormat('yyyy-MM-dd').format(filterToDate.value!);
+
+
+      String? staffIdForRequest;
+      if (isAdmin.value) {
+        staffIdForRequest = selectedDoctor.value?.id;
+        if (staffIdForRequest == null || staffIdForRequest.isEmpty) {
+          Get.snackbar('Validation Error', 'Please select a doctor to view their leave records.');
+          isFetchingRecords.value = false;
+          return;
+        }
+      } else { // Doctor (Global.role == 3)
+        staffIdForRequest = Global.staffId;
+        if (staffIdForRequest == null || staffIdForRequest.isEmpty) {
+          Get.snackbar('Error', 'Your Staff ID is missing to fetch leave records.');
+          isFetchingRecords.value = false;
+          return;
+        }
+      }
+
       final response = await http.get(
-        Uri.parse('${ApiConstants.GET_LEAVE}/$staffId').replace(
+        Uri.parse('${ApiConstants.GET_LEAVE}/$staffIdForRequest').replace(
             queryParameters: {
               'from': from,
               'to': to,
@@ -295,6 +335,12 @@ class LeaveController extends GetxController {
           "Content-Type": "application/json",
         },
       );
+      print('uri==> ${Uri.parse('${ApiConstants.GET_LEAVE}/$staffIdForRequest').replace(
+          queryParameters: {
+            'from': from,
+            'to': to,
+          }
+      )}');
       if (response.statusCode == 200) {
         final leaveModel = leaveModelFromJson(response.body);
         if (leaveModel.success == 1) {
@@ -315,6 +361,12 @@ class LeaveController extends GetxController {
   Future<void> updateLeave(String leaveId) async {
     if (startDate.value == null || endDate.value == null || reasonController.text.isEmpty) {
       Get.snackbar('Error', 'Please fill all required fields.');
+      return;
+    }
+
+    bool hasConflict = await _isLeaveConflict(startDate.value!, endDate.value!, selectedLeaveType.value);
+    if (hasConflict) {
+      Get.snackbar('Error', 'Another leave already exists on this date and leave type.');
       return;
     }
 
@@ -379,11 +431,53 @@ class LeaveController extends GetxController {
   void startEditing(LeaveRecord record) {
     isEditMode.value = true;
     editingLeave.value = record;
-    startDate.value = record.startDate;
-    endDate.value = record.endDate;
+    startDate.value = record.startDate.toLocal();
+    endDate.value = record.endDate.toLocal();
     selectedLeaveType.value = record.leaveType;
     reasonController.text = record.reason;
     selectedStatus.value = record.status; // populate status
+  }
+
+  Future<bool> _isLeaveConflict(DateTime start, DateTime end, String leaveType) async {
+    try {
+      final token = await TokenStorage.getToken();
+      final staffIdForRequest = Global.staffId;
+
+      final response = await http.get(
+        Uri.parse('${ApiConstants.GET_LEAVE}/$staffIdForRequest'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final leaveModel = leaveModelFromJson(response.body);
+        if (leaveModel.success == 1) {
+          for (final leave in leaveModel.body) {
+            // Skip cancelled or rejected leaves if your API returns them
+            if (leave.status.toUpperCase() == 'REJECTED' ||
+                leave.status.toUpperCase() == 'CANCELLED') continue;
+
+            final bool overlaps = !(end.isBefore(leave.startDate) || start.isAfter(leave.endDate));
+
+            if (overlaps) {
+              // Conflict cases
+              if (leave.leaveType == 'FULL_DAY' || leaveType == 'FULL_DAY') {
+                return true;
+              }
+
+              if (leave.leaveType == leaveType) {
+                return true;
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      print('Error checking leave conflict: $e');
+    }
+    return false;
   }
 
 }

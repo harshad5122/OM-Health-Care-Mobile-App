@@ -50,7 +50,7 @@ class AppointmentModel {
         ? TimeSlot.fromJson(json['time_slot'])
         : null,
     visitType: json['visit_type'],
-    appointmentId: json['id'],
+    appointmentId: json['_id'],
     status: json['status'],
     id: json['_id'],
   );
@@ -63,6 +63,7 @@ class AppointmentModel {
     'patient_city': patientCity,
     'patient_state': patientState,
     'patient_country': patientCountry,
+    'visit_type': visitType,
     'staff_id': staffId,
     'date': date,
     'time_slot': timeSlot?.toJson(),
@@ -95,8 +96,8 @@ class TimeSlot {
 }
 
 class DayAppointments {
-  final String date;
-  final String status;
+  final String? date;
+  final String? status;
   final List<Event> events;
   final DaySlots slots;
 
@@ -121,6 +122,8 @@ class DayAppointments {
 
 class Event {
   final String title;
+  final String? startDate;
+  final String? endDate;
   final String start;
   final String end;
   final String type;
@@ -128,6 +131,7 @@ class Event {
   final String? id;
   final String? visitType;
   final String? patientId;
+  final String? patientName;
 
   Event({
     required this.title,
@@ -135,14 +139,19 @@ class Event {
     required this.end,
     required this.type,
     required this.status,
+    this.startDate,
+    this.endDate,
     this.id,
     this.visitType,
+    this.patientName,
     this.patientId,
   });
 
   factory Event.fromJson(Map<String, dynamic> json) {
     return Event(
       title: json['title'] as String,
+      startDate: json['start_date'],
+      endDate: json['end_date'],
       start: json['start'] as String,
       end: json['end'] as String,
       type: json['type'] as String,
@@ -150,6 +159,7 @@ class Event {
       id: json['id'] as String?,
       visitType: json['visit_type'] as String?,
       patientId: json['patient_id'] as String?,
+      patientName: json['patient_name'],
     );
   }
 }
@@ -180,33 +190,115 @@ class DaySlots {
   }
 }
 
-class CalendarAppointment extends CalendarEventData {
-  // Constructor adapted for CalendarEventData
-  CalendarAppointment({
-    required super.date,
-    required super.startTime,
-    required super.endTime,
-    super.endDate,
-    super.title = '',
-    super.description = '',
-    super.color = Colors.blue,
-    this.appointmentId,
-    this.patientId,
-    this.visitType,
-    this.patientName,
-    this.status,
-    this.type,
-  }) : super(
-    // Pass properties to super constructor
-    // The `title` property of CalendarEventData will be used for eventName
-    // `date` will be the event start date
-    // `startTime` and `endTime` will represent the time component
-  );
+class CalendarAppointment {
+  final DateTime date;
+  final DateTime startTime;
+  final DateTime endTime;
+  final String title;
+  final Color color;
+  final bool isAllDay;
 
   final String? appointmentId;
   final String? patientId;
   final String? visitType;
   final String? patientName;
   final String? status;
-  final String? type;
+  final String? type; // "leave" or "appointment"
+
+  CalendarAppointment({
+    required this.date,
+    required this.startTime,
+    required this.endTime,
+    required this.title,
+    this.color = Colors.blue,
+    this.isAllDay = false,
+    this.appointmentId,
+    this.patientId,
+    this.visitType,
+    this.patientName,
+    this.status,
+    this.type,
+  });
+
+  /// Helper to create a CalendarAppointment from our new `Event` model.
+  factory CalendarAppointment.fromEvent(Event event, DateTime eventDate) {
+    DateTime startTime = eventDate;
+    DateTime endTime = eventDate;
+
+    try {
+      final startParts = event.start.split(':'); // "14:00"
+      final endParts = event.end.split(':'); // "20:00"
+
+      startTime = DateTime(
+        eventDate.year,
+        eventDate.month,
+        eventDate.day,
+        int.parse(startParts[0]),
+        int.parse(startParts[1]),
+      );
+
+      endTime = DateTime(
+        eventDate.year,
+        eventDate.month,
+        eventDate.day,
+        int.parse(endParts[0]),
+        int.parse(endParts[1]),
+      );
+    } catch (e) {
+      print("Error parsing time: $e");
+    }
+
+    // Determine color based on type or status
+    Color eventColor = Colors.blue;
+    if (event.type == 'leave') {
+      eventColor = event.status == 'CONFIRMED' ? Colors.grey : Colors.orange;
+    } else if (event.status == 'CONFIRMED') {
+      eventColor = Colors.green;
+    }
+
+    return CalendarAppointment(
+      date: eventDate,
+      title: event.title,
+      startTime: startTime,
+      endTime: endTime,
+      color: eventColor,
+      isAllDay: false, // Individual events are not all-day
+      appointmentId: event.id,
+      patientId: event.patientId,
+      patientName: event.patientName,
+      status: event.status,
+      type: event.type,
+      visitType: event.type,
+    );
+  }
 }
+// class CalendarAppointment extends CalendarEventData {
+//   // Constructor adapted for CalendarEventData
+//   CalendarAppointment({
+//     required super.date,
+//     required super.startTime,
+//     required super.endTime,
+//     super.endDate,
+//     super.title = '',
+//     super.description = '',
+//     super.color = Colors.blue,
+//     this.appointmentId,
+//     this.patientId,
+//     this.visitType,
+//     this.patientName,
+//     this.status,
+//     this.type,
+//   }) : super(
+//     // Pass properties to super constructor
+//     // The `title` property of CalendarEventData will be used for eventName
+//     // `date` will be the event start date
+//     // `startTime` and `endTime` will represent the time component
+//   );
+//
+//   final String? appointmentId;
+//   final String? patientId;
+//   final String? visitType;
+//   final String? patientName;
+//   final String? status;
+//   final String? type;
+// }

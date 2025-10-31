@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../modules/user/controller/profile_controller.dart';
+import '../widgets/custom_drawer.dart';
 import '../widgets/dropdown.dart';
 import '../widgets/textfield.dart';
 
@@ -32,6 +33,7 @@ class ProfilePage extends StatelessWidget {
           )),
         ],
       ),
+      drawer: CustomDrawer(),
       body: Obx(() {
         if (controller.isLoading.value) {
           return const Center(child: CircularProgressIndicator());
@@ -162,16 +164,13 @@ class ProfilePage extends StatelessWidget {
                           "Address", controller.addressController.text),
                       const SizedBox(height: 12),
                       controller.isEditing.value
-                          ? CustomDropdown(
+                          ? CustomTextField(
                         label: "City",
-                        value: controller.selectedCity.value,
-                        items: controller
-                            .cities[controller.selectedState.value] ??
-                            [],
-                        onChanged: (val) =>
-                        controller.selectedCity.value = val ?? "",
+                        hint: "Enter City",
+                        controller: controller.cityController,
                       )
-                          : _buildReadOnly("City", controller.selectedCity.value),
+                          : _buildReadOnly("City", controller.cityController.text),
+
                       const SizedBox(height: 12),
                       controller.isEditing.value
                           ? CustomDropdown(

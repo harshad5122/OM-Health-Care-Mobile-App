@@ -18,7 +18,7 @@ class LeaveManagementPage extends StatelessWidget {
     }
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Apply Leave'),
+        title: Text(_leaveController.isEditMode.value ? 'Edit Leave' : 'Apply Leave'),
         backgroundColor:
             Theme.of(context).primaryColor,
         foregroundColor: Colors.white,
@@ -105,70 +105,65 @@ class LeaveManagementPage extends StatelessWidget {
           }
 
           if (_chatUserController.adminList.isEmpty) {
-            return const Text('No admins available');
+            // Show a disabled-looking box if no admins are available
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                border: Border.all(color: Colors.grey.shade300),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text("No admins available", style: TextStyle(color: Colors.grey)),
+                  Icon(Icons.arrow_drop_down, color: Colors.grey),
+                ],
+              ),
+            );
           }
 
-          return DropdownButtonFormField<String>(
-            value: _leaveController.staffId.value.isEmpty
-                ? null
-                : _leaveController.staffId.value,
-            decoration: InputDecoration(
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              contentPadding:
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            ),
-            hint: const Text("Select an Admin"),
-            items: _chatUserController.adminList.map((admin) {
-              return DropdownMenuItem<String>(
-                value: admin.userId,
-                child: Text(admin.name),
-              );
-            }).toList(),
-            onChanged: (val) {
-              if (val != null) {
-                final selected = _chatUserController.adminList
-                    .firstWhere((a) => a.userId == val);
-                _leaveController.adminId.value = selected.userId;
-                _leaveController.adminName.value = selected.name;
-              }
+
+          return InkWell(
+            // This InkWell is the new trigger
+            onTap: () {
+              // Call the helper function you created in step 1
+              _showAdminBottomSheet(context);
             },
+            child: Container(
+              // This Container mimics the style of your old DropdownButtonFormField
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.black),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // This Obx ensures the selected admin's name updates on the button
+                  Obx(() {
+                    return Text(
+                      // Check the adminName, not staffId
+                      _leaveController.adminName.value.isEmpty
+                          ? "Select an Admin" // Hint text
+                          : _leaveController.adminName.value, // Selected name
+                      style: TextStyle(
+                        color: _leaveController.adminName.value.isEmpty
+                            ? Colors.black// Hint text color
+                            : Colors.black,
+                      fontSize: 16,
+                        fontWeight: FontWeight.w400
+                      ),
+                    );
+                  }),
+                  const Icon(Icons.arrow_drop_down, color: Colors.black),
+                ],
+              ),
+            ),
           );
         }),
 
-        Obx(() {
-          if (_leaveController.isEditMode.value) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 15),
-                Text('Leave Status',
-                    style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<String>(
-                  value: _leaveController.selectedStatus.value,
-                  decoration: InputDecoration(
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8)),
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 8),
-                  ),
-                  items: const [
-                    DropdownMenuItem(
-                        value: 'PENDING', child: Text('Pending')),
-                    DropdownMenuItem(
-                        value: 'CONFIRMED', child: Text('Approved')),
-                    DropdownMenuItem(value: 'CANCELLED', child: Text('Cancelled')),
-                  ],
-                  onChanged: (val) {
-                    if (val != null)
-                      _leaveController.selectedStatus.value = val;
-                  },
-                ),
-              ],
-            );
-          }
-          return const SizedBox.shrink();
-        }),
+
         const SizedBox(height: 15),
         // Reason for Leave
         Text(
@@ -454,5 +449,76 @@ class LeaveManagementPage extends StatelessWidget {
       default:
         return leaveType;
     }
+  }
+
+  void _showAdminBottomSheet(BuildContext context) {
+    // Use Get.bottomSheet, as you are using GetX
+    Get.bottomSheet(
+      Container(
+        decoration: BoxDecoration(
+          // Use your app's theme color for the background
+          color: Theme.of(context).cardColor,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(16),
+            topRight: Radius.circular(16),
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min, // Take only as much height as needed
+          children: [
+            // 1. Title
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16.0),
+              child: Text(
+                'Select Admin',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const Divider(height: 1, thickness: 1),
+
+            // 2. Scrollable List of Admins
+            // We limit the height to 40% of the screen to prevent
+            // it from covering the whole page if there are many admins.
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.4,
+              ),
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: _chatUserController.adminList.length,
+                itemBuilder: (context, index) {
+                  final admin = _chatUserController.adminList[index];
+
+                  // This ListTile provides the "rich look"
+                  return ListTile(
+                    // leading: CircleAvatar(
+                    //   // Display the first letter of the admin's name
+                    //   child: Text(admin.name.isNotEmpty ? admin.name[0].toUpperCase() : 'A'),
+                    // ),
+                    title: Text(admin.name),
+                    // Optional: Add email or other info as a subtitle
+                    // subtitle: Text(admin.email ?? ''),
+                    onTap: () {
+                      // This is your logic from the old `onChanged`
+                      _leaveController.adminId.value = admin.userId;
+                      _leaveController.adminName.value = admin.name;
+
+                      // Close the bottom sheet
+                      Get.back();
+                    },
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 16), // Safe area padding at the bottom
+          ],
+        ),
+      ),
+      // This makes the background color standard
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true, // Allows the sheet to be short
+    );
   }
 }

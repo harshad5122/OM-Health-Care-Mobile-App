@@ -253,6 +253,8 @@ class _MembersPageState extends State<MembersPage> {
                 _infoRow("City", u.city),
                 _infoRow("State", u.state),
                 _infoRow("Country", u.country),
+                _infoRow("Assign Doctor", u.assignDoctor),
+                _infoRow("DOB", u.dob),
               ],
             ),
           ),

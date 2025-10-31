@@ -143,7 +143,7 @@ class MembersController extends GetxController {
     }
   }
 
-  Future<void> fetchDoctors({bool clear = false}) async {
+  Future<void> fetchDoctors({bool clear = false, bool fetchAll = false}) async {
     print('enter here');
     if (isLoading.value) return;
     isLoading.value = true;
@@ -152,11 +152,20 @@ class MembersController extends GetxController {
         doctorsSkip.value = 0;
         doctorsHasMore.value = true;
       }
+      if (!fetchAll && !doctorsHasMore.value) {
+        isLoading.value = false;
+        return;
+      }
       final token = await TokenStorage.getToken();
-      final Map<String, String> params = {
-        'skip': doctorsSkip.value.toString(),
-        'limit': pageSize.toString(),
-      };
+      // final Map<String, String> params = {
+      //   'skip': doctorsSkip.value.toString(),
+      //   'limit': pageSize.toString(),
+      // };
+      final Map<String, String> params = {};
+      if (!fetchAll) {
+        params['skip'] = doctorsSkip.value.toString();
+        params['limit'] = pageSize.toString();
+      }
       final search = searchController.text.trim();
       if (search.isNotEmpty) params['search'] = search;
       if (fromDate.value != null) {
@@ -173,6 +182,7 @@ class MembersController extends GetxController {
       });
       print('response of get api==> ${response}');
       print('response get api==> ${response.statusCode}');
+      print('get doctor api uri ==> ${uri}');
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == 1 &&
@@ -187,10 +197,15 @@ class MembersController extends GetxController {
             doctors.addAll(fetched);
             print('fetched add data => ${fetched}');
           }
-          if (fetched.length < pageSize) {
+          if (fetchAll) {
+            // If we fetched all, there are no more pages
             doctorsHasMore.value = false;
           } else {
-            doctorsSkip.value += pageSize;
+            if (fetched.length < pageSize) {
+              doctorsHasMore.value = false;
+            } else {
+              doctorsSkip.value += pageSize;
+            }
           }
         } else {
           if (clear) doctors.clear();
@@ -366,6 +381,11 @@ class MembersController extends GetxController {
       // If the add/edit page returns true (indicating a successful update),
       // refresh current tab list.
       if (result == true) {
+        Get.snackbar(
+            "Success",
+            "User updated successfully",
+            snackPosition: SnackPosition.BOTTOM
+        );
         fetchCurrentTab(clear: true);
       }
     } catch (e) {
@@ -457,6 +477,11 @@ class MembersController extends GetxController {
 
       // If edit was successful, refresh staff list
       if (result == true) {
+        Get.snackbar(
+            "Success",
+            "Doctor updated successfully",
+            snackPosition: SnackPosition.BOTTOM
+        );
         fetchCurrentTab(clear: true);
       }
     } catch (e) {

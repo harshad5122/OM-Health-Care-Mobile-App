@@ -1,51 +1,51 @@
-
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
-import 'package:calendar_view/calendar_view.dart';
+import 'package:syncfusion_flutter_calendar/calendar.dart'; // Only Syncfusion
 import 'package:om_health_care_app/app/global/global.dart';
 import '../../../data/models/appointment_model.dart';
 import '../../../data/models/patients_model.dart';
 import '../../../data/models/staff_list_model.dart';
-import '../../../data/models/user_list_model.dart';
 import '../../../global/tokenStorage.dart';
 import '../../../utils/api_constants.dart';
-//
-// enum AppointmentFilterDateRange {
-//   all,
-//   thisMonth,
-//   lastMonth,
-//   thisWeek,
-//   custom,
-// }
 
 enum DateRangeOption { thisMonth, lastMonth, thisWeek, custom }
 
 class AppointmentController extends GetxController {
   /// Observables
   var isLoading = false.obs;
-  final isLoadingPatients  = false.obs;
+  final isLoadingPatients = false.obs;
   var doctors = <StaffListModel>[].obs;
   var patients = <PatientModel>[].obs;
-  var appointments = <AppointmentModel>[].obs;
+  var appointments = <AppointmentModel>[].obs; // For the list view appointments
 
-  final EventController<CalendarAppointment> eventController = EventController<CalendarAppointment>();
+  var doctorSchedule = <DayAppointments>[].obs;
+  var scheduleMap = <String, DayAppointments>{}.obs;
+
+  // New: List of Syncfusion Appointment objects for the calendar
+  var sfCalendarAppointments = <Appointment>[].obs;
 
   var skip = 0.obs;
   final int pageSize = 10;
   var hasMore = true.obs;
 
   var selectedDate = DateTime.now().obs;
+  var isPastSelectedDate = false.obs;
+
+
   var availableSlots = <TimeSlot>[].obs; // This will hold available slots for the selectedDate
-  var bookedSlots = <Event>[].obs;       // This will hold booked events for the selectedDate
+  var bookedSlots = <Event>[].obs; // This will hold booked events for the selectedDate (from DayAppointments)
   var startTime = "".obs;
   var endTime = "".obs;
   var selectedPatientId = "".obs;
   var selectedPatientName = "".obs;
   var selectedVisitType = "".obs;
   var selectedStaffId = "".obs;
+
+  var leaveStartTime = "".obs;
+  var leaveEndTime = "".obs;
 
   var selectedAppointmentId = Rxn<String>();
 
@@ -59,7 +59,6 @@ class AppointmentController extends GetxController {
 
   final TextEditingController searchController = TextEditingController();
   var currentSearchQuery = ''.obs;
-  // var currentFilterStatus = ''.obs;
   var currentFilterStatus = <String>[].obs;
 
   var currentFilterDateRange = DateRangeOption.thisMonth.obs;
@@ -67,116 +66,541 @@ class AppointmentController extends GetxController {
   var filterToDate = Rxn<DateTime>();
   var selectedFilterStaffId = ''.obs;
 
-  var allDayAppointments = <CalendarAppointment>[].obs;
-
   final DateFormat displayDateFormat = DateFormat('MMM dd, yyyy');
+  final DateFormat _apiDateFormat = DateFormat('yyyy-MM-dd');
+
+  final DateFormat _displayTimeFormat12Hour = DateFormat('hh:mm a');
+  final DateFormat _apiTimeFormat24Hour = DateFormat('HH:mm');
 
   late Worker _selectedDateWorker;
-  late Worker _selectedStaffIdWorker;
-
   final scrollController = ScrollController();
 
   final customFrom = Rxn<DateTime>();
   final customTo = Rxn<DateTime>();
 
+  var appointmentsSkip = 0.obs;
+  final int appointmentsPageSize = 20;
+  var appointmentsHasMore = true.obs;
 
-  DateTime get fromDate {
-    final now = DateTime.now();
-    switch (dateRangeOption.value) {
-      case DateRangeOption.thisMonth:
-        return DateTime(now.year, now.month, 1);
-      case DateRangeOption.lastMonth:
-        final last = DateTime(now.year, now.month - 1, 1);
-        return last;
-      case DateRangeOption.thisWeek:
-        return now.subtract(Duration(days: now.weekday - 1));
-      case DateRangeOption.custom:
-        return customFrom.value ?? now;
+
+  String formatTimeForDisplay(String? time24Hour) {
+    if (time24Hour == null || time24Hour.isEmpty) return '';
+    try {
+      final dateTime = _apiTimeFormat24Hour.parse(time24Hour);
+      return _displayTimeFormat12Hour.format(dateTime);
+    } catch (e) {
+      print("Error formatting time for display: $e (Input: $time24Hour)");
+      return time24Hour ?? ''; // Fallback
     }
   }
 
-  DateTime get toDate {
-    final now = DateTime.now();
-    switch (dateRangeOption.value) {
-      case DateRangeOption.thisMonth:
-        return DateTime(now.year, now.month + 1, 0);
-      case DateRangeOption.lastMonth:
-        final last = DateTime(now.year, now.month - 1, 1);
-        return DateTime(last.year, last.month + 1, 0);
-      case DateRangeOption.thisWeek:
-        return now.add(Duration(days: 7 - now.weekday));
-      case DateRangeOption.custom:
-        return customTo.value ?? now;
+  String parseDisplayTimeForApi(String? time12Hour) {
+    if (time12Hour == null || time12Hour.isEmpty) return '';
+    try {
+      final dateTime = _displayTimeFormat12Hour.parse(time12Hour);
+      return _apiTimeFormat24Hour.format(dateTime);
+    } catch (e) {
+      print("Error parsing display time for API: $e (Input: $time12Hour)");
+      return time12Hour ?? ''; // Fallback, assuming it might already be 24-hour
     }
   }
+
+
 
   @override
   void onInit() {
     super.onInit();
+    _updateFilterDatesForOption(DateRangeOption.thisMonth);
 
-    fetchDoctors(clear: true).then((_) {
-      // fetchPatients();
-      if (doctors.isNotEmpty && selectedFilterStaffId.value.isEmpty) {
-        selectedFilterStaffId.value = doctors.first.id ?? '';
+    ever(currentFilterDateRange, (DateRangeOption option) {
+      if (option != DateRangeOption.custom) { // Custom dates are handled directly by DateSelectorController
+        _updateFilterDatesForOption(option);
       }
-      fetchPatientAppointments();
     });
 
-    // ever(currentSearchQuery, (_) => fetchPatientAppointments());
-    // ever(currentFilterStatus, (_) => fetchPatientAppointments());
-    // ever(currentFilterDateRange, (range) {
-    //   if (range != (filterFromDate.value != null || filterToDate.value != null)) {
-    //     fetchPatientAppointments();
+    // _selectedDateWorker = ever(selectedDate, _updateUIForSelectedDate);
+    _selectedDateWorker = ever(selectedDate, (date) {
+      _updateUIForSelectedDate(date);
+      // Determine if the selected date is in the past (before today)
+      final today = DateTime.now();
+      isPastSelectedDate.value = date.isBefore(DateTime(today.year, today.month, today.day));
+    });
+
+    // Initial load for doctors and patient appointments list
+    // fetchDoctors(clear: true).then((_) {
+    //   if (doctors.isNotEmpty && selectedFilterStaffId.value.isEmpty) {
+    //     selectedFilterStaffId.value = doctors.first.id ?? '';
     //   }
+    //   // fetchPatientAppointments(); // This is for the list view appointments
     // });
-    // ever(filterFromDate, (_) => fetchPatientAppointments());
-    // ever(filterToDate, (_) => fetchPatientAppointments());
-
-    _selectedDateWorker = ever(selectedDate, (DateTime date) {
-      if (selectedStaffId.value.isNotEmpty) {
-        _fetchAppointmentsForRange(date);      // For calendar view events (month-wide)
-        _fetchAppointmentsForDaySlots(date);  // For dialog's available/booked slots (day-specific)
-      }
-    });
-
-    _selectedStaffIdWorker = ever(selectedStaffId, (String staffId) {
-      if (staffId.isNotEmpty) {
-        selectedDate.refresh(); // This triggers _selectedDateWorker
-      } else {
-        eventController.removeWhere((event) => true); // Clear all calendar events
-        allDayAppointments.clear();
-        availableSlots.clear();
-        bookedSlots.clear();
-      }
-    });
+    fetchDoctors(clear: true);
 
     scrollController.addListener(() {
-      if (scrollController.position.pixels >=
-          scrollController.position.maxScrollExtent - 200 &&
-          !isLoading.value &&
-          hasMore.value) {
-        fetchDoctors();
+      if (scrollController.position.pixels >= scrollController.position.maxScrollExtent - 100) {
+        // When close to bottom, try to fetch more
+        if (!isLoading.value && hasMore.value) {
+          fetchDoctors();
+        }
       }
     });
+
   }
 
   @override
   void onClose() {
     _selectedDateWorker.dispose();
-    _selectedStaffIdWorker.dispose();
     scrollController.dispose();
     searchController.dispose();
     super.onClose();
   }
 
-  void setSelectedStaff(String staffId) {
-    // if (selectedStaffId.value != staffId) {
-    //   selectedStaffId.value = staffId;
-    //   selectedDate.value = DateTime.now();
-    // }
-    selectedFilterStaffId.value = staffId;
-    _fetchAppointmentsForRange(selectedDate.value);
-    _fetchAppointmentsForDaySlots(selectedDate.value);
+  void _updateFilterDatesForOption(DateRangeOption option) {
+    final now = DateTime.now();
+    DateTime from;
+    DateTime to;
+
+    switch (option) {
+      case DateRangeOption.thisMonth:
+        from = DateTime(now.year, now.month, 1);
+        to = DateTime(now.year, now.month + 1, 0);
+        break;
+      case DateRangeOption.lastMonth:
+        final lastMonthStart = DateTime(now.year, now.month - 1, 1);
+        from = lastMonthStart;
+        to = DateTime(lastMonthStart.year, lastMonthStart.month + 1, 0);
+        break;
+      case DateRangeOption.thisWeek:
+        from = now.subtract(Duration(days: now.weekday - 1));
+        to = from.add(const Duration(days: 6)); // Assuming a full 7-day week from start
+        break;
+      case DateRangeOption.custom:
+      // For custom, filterFromDate and filterToDate are directly set by DateSelectorController
+        return; // No need to calculate here, values are already set
+    }
+    filterFromDate.value = from;
+    filterToDate.value = to;
+  }
+
+  DateTime get fromDate {
+    // If filterFromDate is null (e.g., initial state or error), provide a fallback.
+    // However, with proper initialization, it shouldn't be null.
+    return filterFromDate.value ?? DateTime.now();
+  }
+
+  DateTime get toDate {
+    // If filterToDate is null, provide a fallback.
+    return filterToDate.value ?? DateTime.now();
+  }
+
+  bool isDoctorOnLeaveForSelectedDate() {
+    final selected = selectedDate.value;
+    final selectedDateStr = DateFormat('yyyy-MM-dd').format(selected);
+
+    leaveStartTime.value = "";
+    leaveEndTime.value = "";
+
+    try {
+      // Find the DayAppointments that matches the selected date
+      final dayAppointment = doctorSchedule.firstWhereOrNull(
+            (day) => day.date == selectedDateStr,
+      );
+
+      if (dayAppointment == null) return false;
+
+      // Check if that day has any 'leave' type events
+      // final hasLeaveEvent = dayAppointment.events.any(
+      //       (event) => event.type.toLowerCase() == 'leave',
+      // );
+      final leaveEvent = dayAppointment.events.firstWhereOrNull(
+            (event) => event.type.toLowerCase() == 'leave',
+      );
+
+      if (leaveEvent != null) {
+        // FOUND LEAVE: Store its times and return true
+        leaveStartTime.value = leaveEvent.start ?? "";
+        leaveEndTime.value = leaveEvent.end ?? "";
+
+        print("Checking leave for date: $selectedDateStr → true (Leave event found)");
+        return true;
+      }
+
+      // Log for debugging
+      print("Checking leave for date: $selectedDateStr → false (No leave event)");
+
+      // return hasLeaveEvent;
+      return false;
+    } catch (e) {
+      print("Error checking doctor leave for selected date: $e");
+      return false;
+    }
+  }
+
+
+  Future<void> setSelectedStaff(String staffId) async{
+    if (selectedStaffId.value == staffId) {
+
+      if (doctorSchedule.isNotEmpty && scheduleMap.isNotEmpty) {
+        _populateSfCalendarEvents(); // Populate Syncfusion events
+        _updateUIForSelectedDate(selectedDate.value);
+        return;
+      }
+    }
+
+    selectedStaffId.value = staffId;
+    selectedFilterStaffId.value = staffId; // Keep this in sync if needed elsewhere
+    final now = DateTime.now();
+    selectedDate.value = DateTime(now.year, now.month, now.day); // Set to today
+
+    // Fetch data for the current month when a staff is selected
+    await  fetchDataForMonth(selectedDate.value);
+  }
+
+  Future<void> fetchDataForMonth(DateTime monthDate) async {
+      print('enter start');
+    if (selectedStaffId.value.isEmpty) return;
+    print('enter here');
+    if (isLoading.value) return;
+    print('enter now');
+    isLoading.value = true;
+    try {
+      final from = _apiDateFormat.format(DateTime(monthDate.year, monthDate.month, 1));
+      final to = _apiDateFormat.format(DateTime(monthDate.year, monthDate.month + 1, 0));
+
+      await _fetchDoctorScheduleAndPatients(selectedStaffId.value, from, to);
+
+      // After data is fetched, update the calendar dots and bottom list for the currently selected date
+      _populateSfCalendarEvents(); // Populate Syncfusion events
+      _updateUIForSelectedDate(selectedDate.value);
+    } catch (e) {
+      Get.snackbar("Error", "Failed to fetch data: $e");
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> _fetchDoctorScheduleAndPatients(
+      String staffId, String from, String to) async {
+    try {
+      print('enter _fetchDoctorScheduleAndPatients');
+      final token = await TokenStorage.getToken();
+      final uri = Uri.parse(
+          "${ApiConstants.GET_APPOINTMENT_BY_DOCTOR}/$staffId")
+          .replace(queryParameters: {"from": from, "to": to});
+      print("get appointment by doctor api route===>$uri");
+
+      final response = await http.get(
+        uri,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      print('get appointment by doctor response body ===> ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data["success"] == 1 && data["body"] != null) {
+          final List<dynamic> scheduleList = data["body"];
+          final List<DayAppointments> newSchedule = [];
+
+          for (var item in scheduleList) {
+            if (item != null && item is Map<String, dynamic>) {
+              try {
+                newSchedule.add(DayAppointments.fromJson(item));
+              } catch (e) {
+                print("--- FAILED TO PARSE ONE APPOINTMENT ---");
+                print("Error: $e. \nItem was: $item");
+                print("--------------------------------------");
+              }
+            } else {
+              print("Skipping invalid item in schedule list: $item");
+            }
+          }
+          doctorSchedule.assignAll(newSchedule);
+
+          // Populate the map for quick lookup
+          scheduleMap.clear();
+          for (var day in newSchedule) {
+            if (day.date != null) {
+              scheduleMap[day.date!] = day;
+            }
+          }
+
+          // Fetch patients after schedule data is available
+          await _fetchAssignedPatients(staffId);
+
+        } else {
+          doctorSchedule.clear();
+          scheduleMap.clear();
+          patients.clear();
+          Get.snackbar("API Error", data["msg"] ?? "Failed to load schedule");
+        }
+      } else {
+        Get.snackbar(
+            "Error", "Failed to fetch schedule (${response.statusCode})");
+      }
+    } catch (e) {
+      Get.snackbar("Exception", "Error fetching schedule: $e");
+      print("Error fetching schedule: $e");
+    }
+  }
+
+
+  Future<void> _fetchAssignedPatients(String staffId) async {
+      print('enter here');
+    isLoadingPatients.value = true;
+    try {
+      final token = await TokenStorage.getToken();
+      final uri = Uri.parse(
+          "${ApiConstants.BASE_URL}/get-patients-by-assign-doctor")
+          .replace(queryParameters: {'doctor_id': staffId});
+
+      print('get assign patient uri ::: $uri');
+
+      final response = await http.get(
+        uri,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+print('patient response:: ${response.body}');
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data["success"] == 1 && data["body"] != null) {
+          final List<dynamic> patientList = data["body"];
+          patients.assignAll(patientList
+              .map((e) => PatientModel.fromMap(e as Map<String, dynamic>))
+              .toList());
+        } else {
+          patients.clear();
+        }
+      }
+    } catch (e) {
+      Get.snackbar("Exception", "Error fetching patients: $e");
+    } finally {
+      isLoadingPatients.value = false;
+    }
+  }
+
+  void _populateSfCalendarEvents() {
+    sfCalendarAppointments.clear();
+
+    for (var day in doctorSchedule) {
+      final date = _apiDateFormat.parse(day.date!);
+
+      bool hasGrey = false;
+      bool hasGreen = false;
+      bool hasOrange = false;
+
+      // ---------------------------------
+      // Case 1: Leave slots → Grey dot
+      // ---------------------------------
+      if (day.slots.leave.isNotEmpty && !hasGrey) {
+        for (var leaveSlot in day.slots.leave) {
+          final startParts = leaveSlot.start?.split(':') ?? [];
+          final endParts = leaveSlot.end?.split(':') ?? [];
+
+          if (startParts.length == 2 && endParts.length == 2) {
+            final startTime = DateTime(date.year, date.month, date.day,
+                int.parse(startParts[0]), int.parse(startParts[1]));
+            final endTime = DateTime(date.year, date.month, date.day,
+                int.parse(endParts[0]), int.parse(endParts[1]));
+
+            sfCalendarAppointments.add(
+              Appointment(
+                startTime: startTime,
+                endTime: endTime,
+                subject: "Doctor on Leave",
+                color: Colors.grey,
+                notes: jsonEncode({
+                  "status": "leave",
+                  "visitType": "leave",
+                }),
+              ),
+            );
+            hasGrey = true; // ✅ mark added
+            break; // stop after 1 grey appointment for this day
+          }
+        }
+      }
+
+      // ---------------------------------
+      // Case 2: Booked events → Green or Orange dots
+      // ---------------------------------
+      if (day.events.isNotEmpty) {
+        for (var event in day.events) {
+          try {
+            if (event.type == 'leave') continue; // skip leave-type events
+
+            final startParts = event.start.split(':');
+            final endParts = event.end.split(':');
+
+            final startTime = DateTime(
+              date.year,
+              date.month,
+              date.day,
+              int.parse(startParts[0]),
+              int.parse(startParts[1]),
+            );
+
+            final endTime = DateTime(
+              date.year,
+              date.month,
+              date.day,
+              int.parse(endParts[0]),
+              int.parse(endParts[1]),
+            );
+
+            // Determine color based on booking status
+            if (event.status == 'CONFIRMED' && !hasGreen) {
+              sfCalendarAppointments.add(
+                Appointment(
+                  startTime: startTime,
+                  endTime: endTime,
+                  subject: event.title,
+                  color: Colors.green,
+                  notes: jsonEncode({
+                    "status": event.status,
+                    "visitType": event.visitType,
+                    "type": event.type,
+                    "patientId": event.patientId,
+                    "patientName": event.patientName,
+                    "appointmentId": event.id,
+                  }),
+                ),
+              );
+              hasGreen = true; // ✅ only one green per day
+            } else if (event.status != 'CONFIRMED' && !hasOrange) {
+              sfCalendarAppointments.add(
+                Appointment(
+                  startTime: startTime,
+                  endTime: endTime,
+                  subject: event.title,
+                  color: Colors.orange,
+                  notes: jsonEncode({
+                    "status": event.status,
+                    "visitType": event.visitType,
+                    "type": event.type,
+                    "patientId": event.patientId,
+                    "patientName": event.patientName,
+                    "appointmentId": event.id,
+                  }),
+                ),
+              );
+              hasOrange = true; // ✅ only one orange per day
+            }
+
+            // Stop early if all 3 types already added
+            if (hasGreen && hasOrange && hasGrey) break;
+          } catch (e) {
+            print("Error adding event appointment: $e");
+          }
+        }
+      }
+    }
+  }
+
+
+  Appointment _createSfAppointmentFromEvent(Event event, DateTime appointmentDate) {
+    DateTime start = appointmentDate;
+    DateTime end = appointmentDate;
+
+    try {
+      final formattedStartTime = _formatTime(event.start);
+      final formattedEndTime = _formatTime(event.end);
+
+      final startParts = formattedStartTime.split(':');
+      final endParts = formattedEndTime.split(':');
+
+      start = DateTime(
+        appointmentDate.year,
+        appointmentDate.month,
+        appointmentDate.day,
+        int.tryParse(startParts[0]) ?? 0,
+        int.tryParse(startParts[1]) ?? 0,
+      );
+      end = DateTime(
+        appointmentDate.year,
+        appointmentDate.month,
+        appointmentDate.day,
+        int.tryParse(endParts[0]) ?? 0,
+        int.tryParse(endParts[1]) ?? 0,
+      );
+    } catch (e) {
+      print("Error parsing event time or data for ${event.title}: $e");
+    }
+
+    Color eventColor = Colors.red; // Default to red
+    if (event.type == 'booked') {
+      if (event.status == 'PENDING') {
+        eventColor = Colors.orange.shade400;
+      } else if (event.status == 'CONFIRMED') {
+        eventColor = Colors.green.shade600;
+      } else if (event.status == 'COMPLETED') {
+        eventColor = Get.theme.primaryColor;
+      }
+    } else if (event.type == 'leave') {
+      eventColor = Colors.grey.shade600;
+    }
+
+    // Store the full AppointmentModel as JSON in notes for easy retrieval
+    final appointmentModel = AppointmentModel(
+      appointmentId: event.id,
+      patientId: event.patientId,
+      patientName: event.patientName,
+      visitType: event.visitType,
+      date: _apiDateFormat.format(appointmentDate),
+      timeSlot: TimeSlot(start: event.start, end: event.end),
+      status: event.status,
+      staffId: selectedStaffId.value,
+    );
+
+    return Appointment(
+      startTime: start,
+      endTime: end,
+      subject: event.patientName ?? event.title, // Use patient name if available
+      color: eventColor,
+      isAllDay: false,
+      notes: jsonEncode(appointmentModel.toJson()),
+    );
+  }
+
+
+  void _updateUIForSelectedDate(DateTime date) {
+    final dateString = _apiDateFormat.format(date);
+    final dayData = scheduleMap[dateString];
+
+    if (dayData != null) {
+      availableSlots.assignAll(dayData.slots.available);
+      bookedSlots.assignAll(dayData.events);
+    } else {
+      availableSlots.clear();
+      bookedSlots.clear();
+    }
+  }
+
+  void onMonthChanged(DateTime date) {
+    // Determine the month of the first day in the currently loaded doctorSchedule
+    if (doctorSchedule.isNotEmpty) {
+      try {
+        final firstDayDate = _apiDateFormat.parse(doctorSchedule.first.date!);
+        if (firstDayDate.year == date.year && firstDayDate.month == date.month) {
+          // The data for this month is already loaded
+          return;
+        }
+      } catch (e) {
+        print("Error parsing first day date from doctorSchedule: $e");
+        // Proceed to fetch if parsing fails
+      }
+    }
+    // Fetch data for the new month
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!isLoading.value) {
+        fetchDataForMonth(date);
+      }
+    });
   }
 
   void updateSaveEnabled() {
@@ -192,30 +616,28 @@ class AppointmentController extends GetxController {
     patients.clear(); // Clear the patient list
   }
 
-  // Helper to ensure time is in HH:mm format, handling potential nulls safely
   String _formatTime(String? time) {
-    if (time == null || time.isEmpty) return '00:00'; // Default or handle as error
-    if (time.contains(':')) {
+    if (time == null || time.isEmpty) return '00:00';
+    if (time.contains(':') && time.split(':').length == 2) {
       return time;
     }
     try {
-      // Try parsing 12-hour format
       final format12 = DateFormat('h:mm a');
       final format24 = DateFormat('HH:mm');
       final dateTime = format12.parse(time);
       return format24.format(dateTime);
     } catch (e) {
-      // If 12-hour parsing fails, return original or default
-      return time;
+      return '00:00'; // Fallback to a valid format
     }
   }
 
-
   /// API: Fetch Doctors (Unchanged)
-  Future<void> fetchDoctors({bool clear = false,
+  Future<void> fetchDoctors({
+    bool clear = false,
     String search = '',
     String fromDate = '',
-    String toDate = '',}) async {
+    String toDate = '',
+  }) async {
     if (isLoading.value) return;
     try {
       isLoading.value = true;
@@ -266,16 +688,30 @@ class AppointmentController extends GetxController {
   }
 
   /// API: Fetch Patients (Users) - Needed for patient names in cards (Unchanged)
-  Future<void> fetchPatients() async {
-    // if (selectedDoctor.value == null) {
-    //   Get.log("⚠️ No doctor selected yet, skipping fetchPatients()");
-    //   print("selectedDoctor.value: ${selectedDoctor.value}");
-    //   return;
-    // }
+  Future<void> fetchPatients({bool clear = false}) async {
+    if (isLoadingPatients.value) return;
     try {
       isLoadingPatients.value = true;
-      final from = DateFormat('yyyy-MM-dd').format(fromDate);
-      final to = DateFormat('yyyy-MM-dd').format(toDate);
+      // skip.value = 0;
+      // hasMore.value = true;
+
+      if (clear) {
+        skip.value = 0;
+        hasMore.value = true;
+        patients.clear();
+      }
+
+      if (!hasMore.value) return;
+
+      if (filterFromDate.value == null || filterToDate.value == null) {
+        Get.snackbar("Error", "Date range not selected for patients.");
+        isLoadingPatients.value = false;
+        return;
+      }
+
+      final from = DateFormat('yyyy-MM-dd').format(filterFromDate.value!);
+      final to = DateFormat('yyyy-MM-dd').format(filterToDate.value!);
+
       final token = await TokenStorage.getToken();
 
       final doctorId = (Global.role == 3)
@@ -284,65 +720,83 @@ class AppointmentController extends GetxController {
 
       if (doctorId!.isEmpty) {
         Get.snackbar("Error", "Doctor not selected");
+        isLoadingPatients.value = false;
         return;
       }
 
-      // Prepare query params
       final queryParams = {
         'doctor_id': doctorId,
         'from_date': from,
         'to_date': to,
-        'limit': '20',
+        'limit': pageSize.toString(),
+        'skip': skip.value.toString(),
         'search': currentSearchQuery.value,
       };
 
       if (currentFilterStatus.isNotEmpty) {
         queryParams['patient_status'] = currentFilterStatus.join(', ');
-      } else {
-        // Send all statuses
-        queryParams['patient_status'] =
-        'CONTINUE,ALTERNATE,DISCONTINUE,WEEKLY,DISCHARGE,OBSERVATION';
       }
 
       final uri = Uri.parse(ApiConstants.GET_PATIENTS).replace(
         queryParameters: queryParams,
       );
 
+      print('get patient api url : ${uri}');
       final response = await http.get(
-        // Uri.parse(ApiConstants.GET_PATIENTS).replace(
-        //   queryParameters: {
-        //     'doctor_id': selectedDoctor.value!.id,
-        //     'from_date': from,
-        //     'to_date': to,
-        //   }
-        // ),
         uri,
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
       );
+
+      print('get patient api response : ${response.body}');
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data["success"] == 1) {
-          // final List<dynamic> list = data["body"];
-          // patients.assignAll(list.map((e) => UserListModel.fromJson(e)).toList());
+        if (data["success"] == 1 && data["body"]?["rows"] != null) {
           final rows = List<Map<String, dynamic>>.from(data['body']['rows']);
-          patients.assignAll(rows.map((e) => PatientModel.fromMap(e)).toList());
-        }else {
-          patients.clear();
+          final newPatients = rows.map((e) => PatientModel.fromMap(e)).toList();
+          // patients.assignAll(rows.map((e) => PatientModel.fromMap(e)).toList());
+          // patients.assignAll(newPatients);
+          if (clear) {
+            patients.assignAll(newPatients);
+          } else {
+            patients.addAll(newPatients);
+          }
+
+          // if (newPatients.length < pageSize) {
+          //   hasMore.value = false;
+          // }
+          final totalCount = data["body"]["total_count"] ?? 0;
+          if (patients.length >= totalCount || newPatients.length < pageSize) {
+            hasMore.value = false;
+          } else {
+            skip.value += pageSize;
+          }
+        } else {
+          // patients.clear();
+          // hasMore.value = false;
+          if (clear) patients.clear();
+          hasMore.value = false;
+
         }
+      }else {
+        Get.snackbar("Error", "Failed to fetch patients (${response.statusCode})");
+        hasMore.value = false;
       }
     } catch (e) {
       Get.snackbar("Exception", e.toString());
-    }finally {
+      // patients.clear();
+      hasMore.value = false;
+    } finally {
       isLoadingPatients.value = false;
     }
   }
 
+
+
   void selectDoctor(StaffListModel? d) {
     selectedDoctor.value = d;
-    // if (d != null) fetchPatients();
   }
 
   void changeDateRange(DateRangeOption option) {
@@ -350,172 +804,58 @@ class AppointmentController extends GetxController {
     if (option != DateRangeOption.custom) {
       customFrom.value = null;
       customTo.value = null;
-      // if (selectedDoctor.value != null) fetchPatients();
     }
   }
 
   void setCustomRange(DateTime from, DateTime to) {
     customFrom.value = from;
     customTo.value = to;
-    // if (selectedDoctor.value != null) fetchPatients();
   }
 
-  /// API: Fetch ALL Appointments for the Patient Appointments Page (Admin View) with filters (Unchanged logic, just ensure models are null-safe)
-  // Future<void> fetchPatientAppointments() async {
-  //   isLoading.value = true;
-  //   try {
-  //     final token = await TokenStorage.getToken();
-  //     final Map<String, String> queryParams = {};
-  //
-  //     if (currentSearchQuery.value.isNotEmpty) {
-  //       queryParams['q'] = currentSearchQuery.value;
-  //     }
-  //
-  //     DateTime? effectiveFromDate;
-  //     DateTime? effectiveToDate;
-  //
-  //     switch (currentFilterDateRange.value) {
-  //       case AppointmentFilterDateRange.all:
-  //         break;
-  //       case AppointmentFilterDateRange.thisMonth:
-  //         effectiveFromDate = DateTime(DateTime.now().year, DateTime.now().month, 1);
-  //         effectiveToDate = DateTime(DateTime.now().year, DateTime.now().month + 1, 0);
-  //         break;
-  //       case AppointmentFilterDateRange.lastMonth:
-  //         final now = DateTime.now();
-  //         effectiveFromDate = DateTime(now.year, now.month - 1, 1);
-  //         effectiveToDate = DateTime(now.year, now.month, 0);
-  //         break;
-  //       case AppointmentFilterDateRange.thisWeek:
-  //         final now = DateTime.now();
-  //         effectiveFromDate = now.subtract(Duration(days: now.weekday - 1));
-  //         effectiveToDate = effectiveFromDate.add(const Duration(days: 6));
-  //         break;
-  //       case AppointmentFilterDateRange.custom:
-  //         effectiveFromDate = filterFromDate.value;
-  //         effectiveToDate = filterToDate.value;
-  //         break;
-  //     }
-  //
-  //     if (effectiveFromDate != null) {
-  //       queryParams['from'] = DateFormat('yyyy-MM-dd').format(effectiveFromDate);
-  //     }
-  //     if (effectiveToDate != null) {
-  //       queryParams['to'] = DateFormat('yyyy-MM-dd').format(effectiveToDate);
-  //     }
-  //
-  //     if (selectedFilterStaffId.value.isEmpty && doctors.isNotEmpty) {
-  //       selectedFilterStaffId.value = doctors.first.id ?? '';
-  //     }
-  //
-  //     if (selectedFilterStaffId.value.isEmpty) {
-  //       Get.snackbar("Info", "No staff selected to fetch appointments. Please select a staff member or ensure doctors are loaded.");
-  //       isLoading.value = false;
-  //       return;
-  //     }
-  //
-  //     final uri = Uri.parse("${ApiConstants.GET_APPOINTMENT_LIST}/${selectedFilterStaffId.value}").replace(
-  //         queryParameters: queryParams);
-  //
-  //     final response = await http.get(
-  //       uri,
-  //       headers: {
-  //         'Authorization': 'Bearer $token',
-  //         'Content-Type': 'application/json',
-  //       },
-  //     );
-  //
-  //     if (response.statusCode == 200) {
-  //       final data = jsonDecode(response.body);
-  //       if (data["success"] == 1 && data["body"] != null) {
-  //         final List<dynamic> list = data["body"];
-  //         List<AppointmentModel> fetchedAppointments = list.map((e) => AppointmentModel.fromJson(e)).toList();
-  //
-  //         // Enrich appointments with names (logic unchanged)
-  //         List<AppointmentModel> enrichedAppointments = [];
-  //         for (var appointment in fetchedAppointments) {
-  //           final patient = patients.firstWhereOrNull((p) => p.id == appointment.patientId);
-  //           final staff = doctors.firstWhereOrNull((d) => d.id == appointment.staffId);
-  //           // Assuming you add patientFullName/staffFullName to AppointmentModel or handle display separately
-  //           enrichedAppointments.add(appointment);
-  //         }
-  //         appointments.assignAll(enrichedAppointments);
-  //       } else {
-  //         appointments.clear();
-  //       }
-  //     } else {
-  //       Get.snackbar("Error", "Failed to fetch all appointments (${response.statusCode})");
-  //       appointments.clear();
-  //     }
-  //   } catch (e) {
-  //     Get.snackbar("Exception", "Error fetching all appointments: $e");
-  //     print("Error fetching all appointments: $e");
-  //     appointments.clear();
-  //   } finally {
-  //     isLoading.value = false;
-  //   }
-  // }
-
-  // --- Filtering Methods --- (Unchanged)
-
-  Future<void> fetchPatientAppointments() async {
-    isLoading.value = true;
+  Future<void> fetchPatientAppointments({bool clear = false}) async {
+    // isLoading.value = true;
+    // if (isLoading.value) return;
     try {
+      isLoading.value = true;
+
+      if (clear) {
+        appointmentsSkip.value = 0;
+        appointmentsHasMore.value = true;
+        appointments.clear();
+      }
+
+      if (!appointmentsHasMore.value) return;
+
       final token = await TokenStorage.getToken();
       final Map<String, String> queryParams = {};
 
-      // ✅ Search
       if (currentSearchQuery.value.trim().isNotEmpty) {
         queryParams['search'] = currentSearchQuery.value.trim();
       }
 
-      // ✅ Date range filters
-      // DateTime? effectiveFromDate;
-      // DateTime? effectiveToDate;
-
-      DateTime from;
-      DateTime to;
-      final now = DateTime.now();
-
-      switch (currentFilterDateRange.value) {
-        case DateRangeOption.thisMonth:
-          from = DateTime(now.year, now.month, 1);
-          to = DateTime(now.year, now.month + 1, 0);
-          break;
-        case DateRangeOption.lastMonth:
-          final lastMonth = DateTime(now.year, now.month - 1, 1);
-          from = lastMonth;
-          to = DateTime(lastMonth.year, lastMonth.month + 1, 0);
-          break;
-        case DateRangeOption.thisWeek:
-          from = now.subtract(Duration(days: now.weekday - 1));
-          to = from.add(const Duration(days: 6));
-          break;
-        case DateRangeOption.custom:
-          from = filterFromDate.value ?? now;
-          to = filterToDate.value ?? now;
-          break;
+      if (filterFromDate.value == null || filterToDate.value == null) {
+        Get.snackbar("Error", "Date range not selected.");
+        isLoading.value = false;
+        return;
       }
 
-      queryParams['from'] = DateFormat('yyyy-MM-dd').format(from);
-      queryParams['to'] = DateFormat('yyyy-MM-dd').format(to);
+      queryParams['from'] = DateFormat('yyyy-MM-dd').format(filterFromDate.value!);
+      queryParams['to'] = DateFormat('yyyy-MM-dd').format(filterToDate.value!);
 
-      // ✅ Add status filter if applied
+
       if (currentFilterStatus.isNotEmpty) {
-        // Join multiple selected statuses with comma
         queryParams['status'] = currentFilterStatus.join(',');
       }
 
-      // ✅ Add pagination (optional)
-      queryParams['limit'] = '20';
+      // queryParams['limit'] = '20';
+      queryParams['skip'] = appointmentsSkip.value.toString();
+      queryParams['limit'] = appointmentsPageSize.toString();
 
       String staffIdForRequest = '';
 
       if (Global.role == 3) {
-        // If doctor logged in
-        staffIdForRequest = Global.staffId??'';
+        staffIdForRequest = Global.staffId ?? '';
       } else {
-        // 👥 Admin or other roles
         if (selectedFilterStaffId.value.isEmpty && doctors.isNotEmpty) {
           selectedFilterStaffId.value = doctors.first.id ?? '';
         }
@@ -527,27 +867,9 @@ class AppointmentController extends GetxController {
         return;
       }
 
-      // ✅ Ensure staff ID selected
-      // if (selectedFilterStaffId.value.isEmpty && doctors.isNotEmpty) {
-      //   selectedFilterStaffId.value = doctors.first.id ?? '';
-      // }
-
-
-
-      // if (selectedFilterStaffId.value.isEmpty) {
-      //   Get.snackbar("Info", "No staff selected to fetch appointments.");
-      //   isLoading.value = false;
-      //   return;
-      // }
-
-      // final uri = Uri.parse(
-      //   "${ApiConstants.GET_APPOINTMENT_LIST}/${selectedFilterStaffId.value}",
-      // ).replace(queryParameters: queryParams);
-
       final uri = Uri.parse(
-        "${ApiConstants.GET_APPOINTMENT_LIST}/$staffIdForRequest",
-      ).replace(queryParameters: queryParams);
-
+          "${ApiConstants.GET_APPOINTMENT_LIST}/$staffIdForRequest")
+          .replace(queryParameters: queryParams);
 
       print('get appointment list api url ==> $uri');
 
@@ -561,25 +883,33 @@ class AppointmentController extends GetxController {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-
         if (data["success"] == 1 && data["body"]?["rows"] != null) {
           final List<dynamic> list = data["body"]["rows"];
-          appointments.assignAll(list.map((e) => AppointmentModel.fromJson(e)).toList());
-        }
-        // if (data["success"] == 1 && data["body"] != null) {
-        //   final body = data["body"];
-        //   final List<dynamic> list = body["rows"] ?? []; // ✅ Corrected: rows, not body
-        //
-        //   List<AppointmentModel> fetchedAppointments =
-        //   list.map((e) => AppointmentModel.fromJson(e)).toList();
-        //
-        //   appointments.assignAll(fetchedAppointments);
-        // }
-        else {
-          appointments.clear();
+          // appointments.assignAll(list.map((e) => AppointmentModel.fromJson(e)).toList());
+          final fetched = list.map((e) => AppointmentModel.fromJson(e)).toList();
+
+          //  Append or Replace data
+          if (clear) {
+            appointments.assignAll(fetched);
+          } else {
+            appointments.addAll(fetched);
+          }
+
+          // Update skip and hasMore flags
+          final totalCount = data["body"]["total_count"] ?? 0;
+          if (appointments.length >= totalCount) {
+            appointmentsHasMore.value = false;
+          } else {
+            appointmentsSkip.value += appointmentsPageSize;
+          }
+        } else {
+          // appointments.clear();
+          if (clear) appointments.clear();
+          appointmentsHasMore.value = false;
         }
       } else {
-        Get.snackbar("Error", "Failed to fetch appointments (${response.statusCode})");
+        Get.snackbar(
+            "Error", "Failed to fetch appointments (${response.statusCode})");
         appointments.clear();
       }
     } catch (e) {
@@ -591,39 +921,35 @@ class AppointmentController extends GetxController {
     }
   }
 
-
-  void applySearch(String query) {
-    currentSearchQuery.value = query;
-  }
-
-  // void setStatusFilter(String status) {
-  //   currentFilterStatus.value = status;
+  // void applySearch(String query) {
+  //   currentSearchQuery.value = query;
   // }
 
-  void setDateRangeFilter(DateRangeOption range) {
-    currentFilterDateRange.value = range;
-    if (range != DateRangeOption.custom) {
-      filterFromDate.value = null;
-      filterToDate.value = null;
-    }
-  }
+  // void setDateRangeFilter(DateRangeOption range) {
+  //   currentFilterDateRange.value = range;
+  //   if (range != DateRangeOption.custom) {
+  //     filterFromDate.value = null;
+  //     filterToDate.value = null;
+  //   }
+  // }
 
-  Future<void> showCustomDateRangePicker(BuildContext context) async {
-    final DateTimeRange? picked = await showDateRangePicker(
-      context: context,
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2101),
-      initialDateRange: filterFromDate.value != null && filterToDate.value != null
-          ? DateTimeRange(start: filterFromDate.value!, end: filterToDate.value!)
-          : null,
-    );
-
-    if (picked != null) {
-      filterFromDate.value = picked.start;
-      filterToDate.value = picked.end;
-      currentFilterDateRange.value = DateRangeOption.custom;
-    }
-  }
+  // Future<void> showCustomDateRangePicker(BuildContext context) async {
+  //   final DateTimeRange? picked = await showDateRangePicker(
+  //     context: context,
+  //     firstDate: DateTime(2000),
+  //     lastDate: DateTime(2101),
+  //     initialDateRange:
+  //     filterFromDate.value != null && filterToDate.value != null
+  //         ? DateTimeRange(start: filterFromDate.value!, end: filterToDate.value!)
+  //         : null,
+  //   );
+  //
+  //   if (picked != null) {
+  //     filterFromDate.value = picked.start;
+  //     filterToDate.value = picked.end;
+  //     currentFilterDateRange.value = DateRangeOption.custom;
+  //   }
+  // }
 
   void clearFilters() {
     searchController.clear();
@@ -632,197 +958,12 @@ class AppointmentController extends GetxController {
     currentFilterDateRange.value = DateRangeOption.thisMonth;
     filterFromDate.value = null;
     filterToDate.value = null;
+    _updateFilterDatesForOption(DateRangeOption.thisMonth);
+    fetchPatientAppointments(clear: true);
   }
 
-  /// API: Fetch appointments for a given date range (month) for Calendar view
-  Future<void> _fetchAppointmentsForRange(DateTime date) async {
-    if (selectedStaffId.value.isEmpty) {
-      eventController.removeWhere((event) => true);
-      allDayAppointments.clear();
-      return;
-    }
-
-
-    isLoading.value = true;
-    try {
-      final token = await TokenStorage.getToken();
-      DateTime fetchStartDate = DateTime(date.year, date.month, 1);
-      DateTime fetchEndDate = DateTime(date.year, date.month + 1, 0);
-
-      final uri = Uri.parse(
-          "${ApiConstants.GET_APPOINTMENT_BY_DOCTOR}/${selectedStaffId.value}")
-          .replace(queryParameters: {
-        "from": DateFormat('yyyy-MM-dd').format(fetchStartDate),
-        "to": DateFormat('yyyy-MM-dd').format(fetchEndDate),
-      });
-
-      print("API route for calendar: $uri");
-      final response = await http.get(
-        uri,
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data["success"] == 1 && data["body"] != null) {
-          final List<dynamic> daysData = data["body"];
-          final List<CalendarEventData<CalendarAppointment>> fetchedCalendarEvents = [];
-
-          // Clear existing events for the current staff before adding new ones
-          eventController.removeWhere((event) => true); // Clear all events
-
-
-          for (var dayJson in daysData) {
-            final DayAppointments dayAppts = DayAppointments.fromJson(dayJson);
-
-            for (var event in dayAppts.events) {
-              try {
-                final appointmentDate = DateTime.parse(dayAppts.date);
-
-                // Safely format time, handle null/empty strings
-                final String formattedStartTime = _formatTime(event.start);
-                final String formattedEndTime = _formatTime(event.end);
-
-                // Split only if formatted time is valid
-                final startParts = formattedStartTime.split(':');
-                final endParts = formattedEndTime.split(':');
-
-                // Ensure parts have at least two elements before parsing
-                if (startParts.length < 2 || endParts.length < 2) {
-                  print("Skipping event due to invalid time format: ${event.title}");
-                  continue;
-                }
-
-                final startTime = DateTime(
-                  appointmentDate.year,
-                  appointmentDate.month,
-                  appointmentDate.day,
-                  int.tryParse(startParts[0]) ?? 0,
-                  int.tryParse(startParts[1]) ?? 0,
-                );
-                final endTime = DateTime(
-                  appointmentDate.year,
-                  appointmentDate.month,
-                  appointmentDate.day,
-                  int.tryParse(endParts[0]) ?? 0,
-                  int.tryParse(endParts[1]) ?? 0,
-                );
-
-                // Determine background color based on event type and status
-                Color eventColor = Colors.red; // Default to red
-                String displayTitle = event.title;
-                if (event.type == 'booked') {
-                  if (event.status == 'PENDING') {
-                    eventColor = Colors.orange..shade400;
-                  } else if (event.status == 'CONFIRMED') {
-                    eventColor = Colors.green.shade600;
-                  }
-                } else if (event.type == 'leave') {
-                  eventColor = Colors.grey;
-                  displayTitle = event.title;
-                }
-
-                fetchedCalendarEvents.add(
-                  CalendarEventData<CalendarAppointment>(
-                    date: appointmentDate,
-                    startTime: startTime,
-                    endTime: endTime,
-                    // title: event.title,
-                    title: displayTitle,
-                    // description: event.title, // or more detailed description
-                    description: displayTitle, // or more detailed description
-                    color: eventColor,
-                    event: CalendarAppointment(
-                      date: appointmentDate,
-                      startTime: startTime,
-                      endTime: endTime,
-                      title: event.title,
-                      color: eventColor,
-                      appointmentId: event.id,
-                      patientId: event.patientId,
-                      visitType: event.visitType,
-                      status: event.status,
-                    ),
-                  ),
-                );
-              } catch (e) {
-                print("Error parsing event time or data for ${event.title}: $e");
-              }
-            }
-          }
-          eventController.addAll(fetchedCalendarEvents);
-        }
-      } else {
-        Get.snackbar("Error", "Failed to fetch appointments (${response.statusCode})");
-      }
-    } catch (e) {
-      // Get.snackbar("Exception", "Error fetching appointments for range: $e");
-      print('Exception error fetching appointments for range: $e');
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  /// NEW: API to fetch available and booked slots for a specific day
-  Future<void> _fetchAppointmentsForDaySlots(DateTime date) async {
-    if (selectedStaffId.value.isEmpty) {
-      availableSlots.clear();
-      bookedSlots.clear();
-      return;
-    }
-
-    isLoading.value = true;
-    try {
-      final token = await TokenStorage.getToken();
-      final formattedDate = DateFormat('yyyy-MM-dd').format(date);
-
-      final uri = Uri.parse(
-          "${ApiConstants.GET_APPOINTMENT_BY_DOCTOR}/${selectedStaffId.value}")
-          .replace(queryParameters: {
-        "from": formattedDate,
-        "to": formattedDate,
-      });
-
-      print("API route for day slots: $uri");
-      final response = await http.get(
-        uri,
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data["success"] == 1 && data["body"] != null) {
-          final List<dynamic> daysData = data["body"];
-          if (daysData.isNotEmpty) {
-            final DayAppointments dayAppts = DayAppointments.fromJson(daysData[0]);
-            availableSlots.assignAll(dayAppts.slots.available);
-            bookedSlots.assignAll(dayAppts.events); // Use events for booked slots to get full info for dialog
-          } else {
-            availableSlots.clear();
-            bookedSlots.clear();
-          }
-        }
-      } else {
-        Get.snackbar(
-            "Error", "Failed to fetch day slots (${response.statusCode})");
-      }
-    } catch (e) {
-      Get.snackbar("Exception", "Error fetching day slots: $e");
-      print('Exception error fetching day slots: $e');
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-
-  /// API: Update Appointment Status (Unchanged logic, just ensure models are null-safe)
-  Future<void> updateAppointmentStatus(String appointmentId, String status, String patientId, String creatorId) async {
+  Future<void> updateAppointmentStatus(
+      String appointmentId, String status, String patientId, String creatorId) async {
     isLoading.value = true;
     Get.dialog(
       const Center(child: CircularProgressIndicator()),
@@ -838,8 +979,10 @@ class AppointmentController extends GetxController {
       };
       final response = await http.put(
         Uri.parse(ApiConstants.UPDATE_APPOINTMENT_STATUS),
-        headers: { "Authorization": "Bearer $token",
-          "Content-Type": "application/json",},
+        headers: {
+          "Authorization": "Bearer $token",
+          "Content-Type": "application/json",
+        },
         body: jsonEncode(body),
       );
       Get.back();
@@ -847,11 +990,12 @@ class AppointmentController extends GetxController {
         Get.snackbar("Success", "Appointment $status successfully");
         await fetchPatientAppointments();
         editingStatuses.remove(appointmentId);
-        _fetchAppointmentsForRange(selectedDate.value); // Refresh calendar
-        _fetchAppointmentsForDaySlots(selectedDate.value); // Refresh dialog slots
+        // Refresh calendar view after status update
+        fetchDataForMonth(selectedDate.value);
       } else {
         final errorData = jsonDecode(response.body);
-        Get.snackbar("Error", "Failed to update appointment: ${errorData["msg"] ?? response.statusCode}");
+        Get.snackbar("Error",
+            "Failed to update appointment: ${errorData["msg"] ?? response.statusCode}");
       }
     } catch (e) {
       Get.back();
@@ -869,84 +1013,131 @@ class AppointmentController extends GetxController {
     return editingStatuses[appointmentId] ?? defaultStatus;
   }
 
-  // --- NEW: Time Slot Conflict Detection ---
-  bool _isTimeSlotBooked(String proposedStartTime, String proposedEndTime, {String? appointmentIdToExclude}) {
+  Future<void> updatePatientStatus(String patientId, String newStatus) async {
+    try {
+      final token = await TokenStorage.getToken();
+      final url =
+      Uri.parse('${ApiConstants.UPDATE_PATIENT_STATUS}/$patientId');
+
+      print('url ==> $url');
+
+      final payload = {"patient_status": newStatus, "message": ""};
+
+      print('payload==> ${payload}');
+
+      final response = await http.put(
+        url,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(payload),
+      );
+
+      print('response===> ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data["success"] == 1) {
+          Get.snackbar("Success", "Patient status updated successfully");
+          await fetchPatients();
+        } else {
+          Get.snackbar("Error", data["msg"] ?? "Failed to update");
+        }
+      } else {
+        Get.snackbar("Error", "Failed with status ${response.statusCode}");
+      }
+    } catch (e) {
+      Get.snackbar("Error", e.toString());
+    }
+  }
+
+  bool _isTimeSlotBooked(String proposedStartTime, String proposedEndTime,
+      {String? appointmentIdToExclude}) {
     if (proposedStartTime.isEmpty || proposedEndTime.isEmpty) {
       return false; // Cannot check if times are not selected
     }
 
     try {
       final DateFormat timeFormat = DateFormat('HH:mm');
-      final DateTime proposedStart = timeFormat.parse(proposedStartTime);
-      final DateTime proposedEnd = timeFormat.parse(proposedEndTime);
+      // final DateTime proposedStart = timeFormat.parse(proposedStartTime);
+      // final DateTime proposedEnd = timeFormat.parse(proposedEndTime);
+      final DateTime proposedStart = _apiTimeFormat24Hour.parse(proposedStartTime);
+      final DateTime proposedEnd = _apiTimeFormat24Hour.parse(proposedEndTime);
 
-      // Convert proposed times to DateTime objects for the selected date
-      final DateTime newAppointmentStart = DateTime(selectedDate.value.year, selectedDate.value.month, selectedDate.value.day, proposedStart.hour, proposedStart.minute);
-      final DateTime newAppointmentEnd = DateTime(selectedDate.value.year, selectedDate.value.month, selectedDate.value.day, proposedEnd.hour, proposedEnd.minute);
+      final DateTime newAppointmentStart = DateTime(
+          selectedDate.value.year,
+          selectedDate.value.month,
+          selectedDate.value.day,
+          proposedStart.hour,
+          proposedStart.minute);
+      final DateTime newAppointmentEnd = DateTime(
+          selectedDate.value.year,
+          selectedDate.value.month,
+          selectedDate.value.day,
+          proposedEnd.hour,
+          proposedEnd.minute);
 
       for (var bookedEvent in bookedSlots) {
-        // Skip the current appointment being edited
         if (appointmentIdToExclude != null && bookedEvent.id == appointmentIdToExclude) {
           continue;
         }
 
-        if (bookedEvent.start == null || bookedEvent.end == null) {
-          continue; // Skip malformed booked events
-        }
+        // final DateTime bookedEventStart = timeFormat.parse(bookedEvent.start);
+        // final DateTime bookedEventEnd = timeFormat.parse(bookedEvent.end);
+        final DateTime bookedEventStart = _apiTimeFormat24Hour.parse(bookedEvent.start);
+        final DateTime bookedEventEnd = _apiTimeFormat24Hour.parse(bookedEvent.end);
 
-        final DateTime bookedEventStart = timeFormat.parse(bookedEvent.start!);
-        final DateTime bookedEventEnd = timeFormat.parse(bookedEvent.end!);
+        final DateTime existingAppointmentStart = DateTime(
+            selectedDate.value.year,
+            selectedDate.value.month,
+            selectedDate.value.day,
+            bookedEventStart.hour,
+            bookedEventStart.minute);
+        final DateTime existingAppointmentEnd = DateTime(
+            selectedDate.value.year,
+            selectedDate.value.month,
+            selectedDate.value.day,
+            bookedEventEnd.hour,
+            bookedEventEnd.minute);
 
-        final DateTime existingAppointmentStart = DateTime(selectedDate.value.year, selectedDate.value.month, selectedDate.value.day, bookedEventStart.hour, bookedEventStart.minute);
-        final DateTime existingAppointmentEnd = DateTime(selectedDate.value.year, selectedDate.value.month, selectedDate.value.day, bookedEventEnd.hour, bookedEventEnd.minute);
-
-        // Check for overlap:
-        // (StartA < EndB) && (EndA > StartB)
-        if (newAppointmentStart.isBefore(existingAppointmentEnd) && newAppointmentEnd.isAfter(existingAppointmentStart)) {
+        if (newAppointmentStart.isBefore(existingAppointmentEnd) &&
+            newAppointmentEnd.isAfter(existingAppointmentStart)) {
           return true; // Conflict found
         }
       }
     } catch (e) {
       print("Error in _isTimeSlotBooked: $e");
-      // Handle parsing errors gracefully, perhaps show a snackbar for invalid time format
-      return true; // Assume conflict if times are unparseable
+      return true;
     }
     return false; // No conflict
   }
 
-  // NEW: Validate time input from TimePicker against booked slots
-  void _validateAndSetTime(Function(String) setter, String newTime) {
-    // Temporarily set the time to check for conflicts (depends on which is being set)
-    String tempStartTime = (setter == (val) => startTime.value = val) ? newTime : startTime.value;
-    String tempEndTime = (setter == (val) => endTime.value = val) ? newTime : endTime.value;
-
-    if (tempStartTime.isNotEmpty && tempEndTime.isNotEmpty) {
-      if (_isTimeSlotBooked(tempStartTime, tempEndTime, appointmentIdToExclude: isEditMode.value ? selectedAppointmentId.value : null)) {
-        Get.snackbar(
-          'Error',
-          'This time slot overlaps with an existing appointment. Please choose another.',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red.shade400,
-          colorText: Colors.white,
-        );
-        return;
-      }
-    }
-
-    setter(newTime);
-    updateSaveEnabled();
-  }
-
-  // void selectTimeSlot(TimeSlot slot) {
-  //   startTime.value = slot.start ?? "";
-  //   endTime.value = slot.end ?? "";
-  //   selectedAppointmentId.value = null;
-  //   isEditMode.value = false;
+  // void validateAndSetTime(Function(String) setter, String newTime) {
+  //   String tempStartTime = (setter == (val) => startTime.value = val) ? newTime : startTime.value;
+  //   String tempEndTime = (setter == (val) => endTime.value = val) ? newTime : endTime.value;
+  //
+  //   if (tempStartTime.isNotEmpty && tempEndTime.isNotEmpty) {
+  //     if (_isTimeSlotBooked(tempStartTime, tempEndTime, appointmentIdToExclude: isEditMode.value ? selectedAppointmentId.value : null)) {
+  //       Get.snackbar(
+  //         'Error',
+  //         'This time slot overlaps with an existing appointment. Please choose another.',
+  //         snackPosition: SnackPosition.BOTTOM,
+  //         backgroundColor: Colors.red.shade400,
+  //         colorText: Colors.white,
+  //       );
+  //       print('This time slot overlaps with an existing appointment. Please choose another.');
+  //       return;
+  //     }
+  //   }
+  //
+  //   setter(newTime);
   //   updateSaveEnabled();
   // }
+
   void selectTimeSlot(TimeSlot slot) {
-    // Check if the selected available slot is actually still available (not newly booked by someone else)
-    if (_isTimeSlotBooked(slot.start ?? "", slot.end ?? "", appointmentIdToExclude: isEditMode.value ? selectedAppointmentId.value : null)) {
+    if (_isTimeSlotBooked(slot.start ?? "", slot.end ?? "",
+        appointmentIdToExclude: isEditMode.value ? selectedAppointmentId.value : null)) {
       Get.snackbar(
         'Error',
         'This slot is no longer available. Please choose another.',
@@ -963,21 +1154,25 @@ class AppointmentController extends GetxController {
     updateSaveEnabled();
   }
 
-
-  void selectExistingAppointment(CalendarAppointment appointment) {
+  void selectExistingAppointment(CalendarAppointment  appointment) {
     isEditMode.value = true;
+    // final AppointmentModel originalApptModel = AppointmentModel.fromJson(jsonDecode(sfAppointment.notes!));
+
     selectedAppointmentId.value = appointment.appointmentId;
-    startTime.value = DateFormat('HH:mm').format(appointment.startTime!); // Use startTime from CalendarAppointment
-    endTime.value = DateFormat('HH:mm').format(appointment.endTime!);   // Use endTime from CalendarAppointment
+    // startTime.value = DateFormat('HH:mm').format(appointment.startTime);
+    // endTime.value = DateFormat('HH:mm').format(appointment.endTime);
+    startTime.value = _apiTimeFormat24Hour.format(appointment.startTime);
+    endTime.value = _apiTimeFormat24Hour.format(appointment.endTime);
     selectedPatientId.value = appointment.patientId ?? "";
     selectedVisitType.value = appointment.visitType ?? "";
 
-    final selectedPatient =
-    patients.firstWhereOrNull((p) => p.id == appointment.patientId);
+    final selectedPatient = patients.firstWhereOrNull((p) => p.id == appointment.patientId);
+    // selectedPatientName.value = (selectedPatient != null)
+    //     ? "${selectedPatient.firstname ?? ''} ${selectedPatient.lastname ?? ''}"
+    //     : "";
     selectedPatientName.value = (selectedPatient != null)
-        ? "${selectedPatient.firstname ?? ''} ${selectedPatient.lastname ?? ''}"
+        ? selectedPatient.fullName ?? ''
         : "";
-
     updateSaveEnabled();
   }
 
@@ -1005,21 +1200,14 @@ class AppointmentController extends GetxController {
     }
     isLoading.value = true;
 
-    // Ensure start/end times are parsed correctly
-    final parsedStartTime = DateFormat('HH:mm').parse(startTime.value);
-    final parsedEndTime = DateFormat('HH:mm').parse(endTime.value);
-
-    // Combine selected date with time parts
-    final appointmentStartTime = DateTime(selectedDate.value.year, selectedDate.value.month,
-        selectedDate.value.day, parsedStartTime.hour, parsedStartTime.minute);
-    final appointmentEndTime = DateTime(selectedDate.value.year, selectedDate.value.month,
-        selectedDate.value.day, parsedEndTime.hour, parsedEndTime.minute);
+    print('visit type select ==> ${selectedVisitType}');
 
     final appointment = AppointmentModel(
       patientId: selectedPatientId.value,
       patientName: selectedPatientName.value,
       staffId: selectedStaffId.value,
-      date: DateFormat('yyyy-MM-dd').format(selectedDate.value),
+      // date: DateFormat('yyyy-MM-dd').format(selectedDate.value),
+      date: _apiDateFormat.format(selectedDate.value),
       timeSlot: TimeSlot(start: startTime.value, end: endTime.value),
       visitType: selectedVisitType.value,
     );
@@ -1045,8 +1233,8 @@ class AppointmentController extends GetxController {
         Get.snackbar('Success', 'Appointment booked successfully!');
         Get.back();
         print('success');
-        _fetchAppointmentsForRange(selectedDate.value); // Refresh calendar appointments
-        _fetchAppointmentsForDaySlots(selectedDate.value); // Refresh dialog slots
+        // Refresh data for the current month after booking
+        fetchDataForMonth(selectedDate.value);
         clearAppointmentSelection();
         fetchPatientAppointments();
       } else {
@@ -1059,11 +1247,15 @@ class AppointmentController extends GetxController {
   }
 
   Future<void> updateAppointment() async {
-    if (selectedAppointmentId.value == null) {
-      Get.snackbar('Error', 'No appointment selected for update.');
+    // if (selectedAppointmentId.value == null) {
+    //   Get.snackbar('Error', 'No appointment selected for update.');
+    //   return;
+    // }
+    if (selectedAppointmentId.value == null || selectedAppointmentId.value!.isEmpty) {
+      Get.snackbar('Error', 'Cannot update appointment: ID is missing.');
+      isLoading.value = false;
       return;
     }
-
     isLoading.value = true;
 
     final token = await TokenStorage.getToken();
@@ -1100,8 +1292,8 @@ class AppointmentController extends GetxController {
         Get.snackbar('Success', 'Appointment updated successfully!');
         Get.back();
         print('response body: ${response.body}');
-        _fetchAppointmentsForRange(selectedDate.value); // Refresh calendar appointments
-        _fetchAppointmentsForDaySlots(selectedDate.value); // Refresh dialog slots
+        // Refresh data for the current month after updating
+        fetchDataForMonth(selectedDate.value);
         clearAppointmentSelection();
         fetchPatientAppointments();
       } else {
@@ -1122,14 +1314,3 @@ class AppointmentController extends GetxController {
     }
   }
 }
-
-
-
-
-
-
-
-
-
-
-

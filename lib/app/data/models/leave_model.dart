@@ -83,8 +83,8 @@ class LeaveRecord {
   factory LeaveRecord.fromJson(Map<String, dynamic> json) => LeaveRecord(
     id: json["_id"],
     staffId: json["staff_id"],
-    startDate: DateTime.parse(json["start_date"]),
-    endDate: DateTime.parse(json["end_date"]),
+    startDate: DateTime.parse(json["start_date"]).toLocal(),
+    endDate: DateTime.parse(json["end_date"]).toLocal(),
     reason: json["reason"],
     leaveType: json["leave_type"],
     status: json["status"],

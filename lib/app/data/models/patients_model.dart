@@ -15,6 +15,9 @@ class PatientModel {
   final int totalAppointments;
   final String patientStatus;
   final String dob;
+  String? fullName;
+  final int? totalCount;
+
 
   PatientModel({
     required this.id,
@@ -31,9 +34,12 @@ class PatientModel {
     required this.totalAppointments,
     required this.patientStatus,
     required this.dob,
+    this.fullName,
+    this.totalCount,
+
   });
 
-  String get fullName => '${firstname.trim()} ${lastname.trim()}';
+  // String get fullName => '${firstname.trim()} ${lastname.trim()}';
 
   factory PatientModel.fromMap(Map<String, dynamic> map) {
     return PatientModel(
@@ -51,6 +57,8 @@ class PatientModel {
       totalAppointments: map['total_appointments'] ?? 0,
       patientStatus: map['patient_status'] ?? '',
       dob: map['dob'] ?? '',
+      fullName: map['full_name'] ?? '',
+      totalCount: map['total_count'],
     );
   }
 

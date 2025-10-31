@@ -16,6 +16,8 @@ class CustomListPage2 extends StatelessWidget {
   final VoidCallback onSelectDateRange;
   final void Function(String)? onSearchChanged;
 
+  final ScrollController? scrollController;
+
   // --- Display Values ---
   final String selectedStatusText;
   final String selectedDateRangeText;
@@ -38,6 +40,7 @@ class CustomListPage2 extends StatelessWidget {
     required this.selectedDateRangeText,
     required this.formattedDateRange,
     required this.searchController,
+    this.scrollController,
     this.onSearchChanged,
   });
 
@@ -160,6 +163,7 @@ class CustomListPage2 extends StatelessWidget {
       return Center(child: Text(noDataMessage));
     }
     return ListView.builder(
+      controller: scrollController,
       itemCount: itemCount,
       itemBuilder: itemBuilder,
     );

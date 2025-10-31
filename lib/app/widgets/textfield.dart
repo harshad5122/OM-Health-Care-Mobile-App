@@ -11,6 +11,7 @@ class CustomTextField extends StatelessWidget {
   final String? Function(String?)? validator;
   final RxBool? isPasswordHidden;
   final Widget? prefixWidget;
+  final IconData? suffixIcon;
 
 
   const CustomTextField({
@@ -24,6 +25,7 @@ class CustomTextField extends StatelessWidget {
     this.validator,
     this.isPasswordHidden,
     this.prefixWidget,
+    this.suffixIcon,
   });
 
   @override
@@ -58,14 +60,22 @@ class CustomTextField extends StatelessWidget {
             vertical: 10,
             horizontal: 12,
           ),
-          suffixIcon: isPassword
+          suffixIcon: suffixIcon != null
+              ? Icon(suffixIcon)
+              : isPassword
               ? IconButton(
-            icon: Icon(
-              obscure ? Icons.visibility : Icons.visibility_off,
-            ),
+            icon: Icon(obscure ? Icons.visibility : Icons.visibility_off),
             onPressed: onToggle,
           )
               : null,
+          // suffixIcon: isPassword
+          //     ? IconButton(
+          //   icon: Icon(
+          //     obscure ? Icons.visibility : Icons.visibility_off,
+          //   ),
+          //   onPressed: onToggle,
+          // )
+          //     : null,
         ),
       );
     }

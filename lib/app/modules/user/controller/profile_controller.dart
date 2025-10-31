@@ -15,6 +15,7 @@ class ProfileController extends GetxController {
   final lastNameController = TextEditingController();
   final emailController = TextEditingController();
   final phoneController = TextEditingController();
+  final cityController = TextEditingController();
   final dob = Rxn<DateTime>();
   var selectedGender = "".obs;
 
@@ -28,20 +29,21 @@ class ProfileController extends GetxController {
   final genders = ["Male", "Female", "Other"];
   final countries = ["India", "USA", "UK"];
   final states = {
-    "India": ["Gujarat", "Maharashtra", "Delhi"],
+    "India": ["Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu",
+      "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal", "Andaman and Nicobar Islands", "Chandigarh", "Dadra and Nagar Haveli and Daman and Diu", "Delhi", "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry"],
     "USA": ["California", "Texas", "New York"],
     "UK": ["London", "Manchester"],
   };
-  final cities = {
-    "Gujarat": ["Ahmedabad", "Surat", "Rajkot"],
-    "Maharashtra": ["Mumbai", "Pune"],
-    "Delhi": ["New Delhi"],
-    "California": ["Los Angeles", "San Francisco"],
-    "Texas": ["Houston", "Dallas"],
-    "New York": ["New York City", "Buffalo"],
-    "London": ["London City"],
-    "Manchester": ["Manchester City"],
-  };
+  // final cities = {
+  //   "Gujarat": ["Ahmedabad", "Surat", "Rajkot"],
+  //   "Maharashtra": ["Mumbai", "Pune"],
+  //   "Delhi": ["New Delhi"],
+  //   "California": ["Los Angeles", "San Francisco"],
+  //   "Texas": ["Houston", "Dallas"],
+  //   "New York": ["New York City", "Buffalo"],
+  //   "London": ["London City"],
+  //   "Manchester": ["Manchester City"],
+  // };
 
   @override
   void onInit() {
@@ -92,7 +94,8 @@ class ProfileController extends GetxController {
         selectedGender.value = (user["gender"] ?? "").toLowerCase();
         selectedCountry.value = user["country"] ?? "";
         selectedState.value = user["state"] ?? "";
-        selectedCity.value = user["city"] ?? "";
+        // selectedCity.value = user["city"] ?? "";
+        cityController.text = user["city"] ?? "";
 
         if (user["dob"] != null && user["dob"].toString().isNotEmpty) {
           dob.value = DateTime.tryParse(user["dob"]);
@@ -132,7 +135,8 @@ class ProfileController extends GetxController {
         "address": addressController.text.trim(),
         "country": selectedCountry.value,
         "state": selectedState.value,
-        "city": selectedCity.value,
+        // "city": selectedCity.value,
+        "city": cityController.text.trim(),
         "gender": selectedGender.value.toLowerCase(),
         "dob": dob.value?.toIso8601String(),
       };

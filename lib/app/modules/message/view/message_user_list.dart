@@ -47,7 +47,8 @@ class _MessageUserListState extends State<MessageUserList>
       }
 
       if (users.isEmpty) {
-        return const Center(child: Text("No users found"));
+        // return const Center(child: Text("No users found"));
+        return const Center(child: CircularProgressIndicator());
       }
 
       users.sort((a, b) {

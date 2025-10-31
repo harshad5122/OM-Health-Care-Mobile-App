@@ -663,6 +663,7 @@ import '../controller/chat_contoller.dart';
 import '../controller/download_controller.dart';
 import 'audio_player.dart';
 import 'full_screen_image.dart';
+import 'message_status.dart';
 
 class ChatBubble extends StatefulWidget {
   final MessageModel? message;
@@ -809,7 +810,7 @@ class _ChatBubbleState extends State<ChatBubble> {
                                 left: BorderSide(
                                     color: widget.isMe
                                         ? Colors.green.shade700
-                                        : Colors.blue.shade700,
+                                        : Get.theme.primaryColor,
                                     width: 4)), // Accent border
                           ),
                           child: Column(
@@ -840,7 +841,7 @@ class _ChatBubbleState extends State<ChatBubble> {
                                   fontWeight: FontWeight.bold,
                                   color: widget.isMe
                                       ? Colors.green.shade700
-                                      : Colors.blue.shade700,
+                                      : Get.theme.primaryColor,
                                 ),
                               ),
 
@@ -977,23 +978,7 @@ class _ChatBubbleState extends State<ChatBubble> {
                                           fit: BoxFit.cover,
                                         ),
                                       ),
-                                      // Positioned(
-                                      //   bottom: 0,
-                                      //   right: 0,
-                                      //   child: Row(
-                                      //     children: [
-                                      //       Text(formattedTime,
-                                      //           style: TextStyle(fontSize: 10, color: Colors.white, shadows: [Shadow(color: Colors.black, blurRadius: 2)])),
-                                      //       const SizedBox(width: 4),
-                                      //       if (widget.isMe)
-                                      //         Icon(
-                                      //           status == 'seen' ? Icons.done_all : Icons.done,
-                                      //           size: 16,
-                                      //           color: status == 'seen' ? Colors.blue : Colors.white,
-                                      //         ),
-                                      //     ],
-                                      //   ),
-                                      // ),
+
                                     ],
                                   ),
                                 ),
@@ -1414,110 +1399,68 @@ class _ChatBubbleState extends State<ChatBubble> {
 
                       // Text Message
                       if (text != null && text.isNotEmpty) ...[
-                        Stack(
+                        // Use a Wrap widget instead of a Stack.
+                        // This naturally places the timestamp row next to the last
+                        // line of text, or wraps it to a new line (aligned right)
+                        // if the text is too long, preventing any overlap.
+                        Wrap(
+                          alignment: WrapAlignment.end, // Aligns the timestamp row to the right
+                          crossAxisAlignment: WrapCrossAlignment.end,
                           children: [
-                            Padding(
-                              padding: const EdgeInsets.only(right: 70),
-                              // leave room for timestamp
-                              child: text.contains("zoom.us")
-                                  ? GestureDetector(
-                                      onTap: () async {
-                                        final url = Uri.parse(text);
-                                        if (await canLaunchUrl(url)) {
-                                          await launchUrl(url,
-                                              mode: LaunchMode
-                                                  .externalApplication);
-                                        } else {
-                                          Get.snackbar('Error',
-                                              'Could not open Zoom link');
-                                        }
-                                      },
-                                      child: Container(
-                                        padding: const EdgeInsets.all(8),
-                                        decoration: BoxDecoration(
-                                          color: Colors.blue.shade50,
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                          border:
-                                              Border.all(color: Colors.blue),
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Image.asset(
-                                                    'assets/icon/zoom.png',
-                                                    height: 24,
-                                                    width: 24),
-                                                const SizedBox(width: 8),
-                                                const Text("Zoom Meeting",
-                                                    style: TextStyle(
-                                                        fontWeight:
-                                                            FontWeight.bold)),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              DateFormat(
-                                                      'MMM d, yyyy – hh:mm a')
-                                                  .format(localTime),
-                                              style: TextStyle(
-                                                  color: Colors.grey[600],
-                                                  fontSize: 12),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    )
-                                  : Text(
-                                      text,
-                                      style: TextStyle(
-                                        fontSize: 15,
-                                        color: widget.isMe
-                                            ? Colors.black87
-                                            : Colors.black,
-                                      ),
-                                    ),
+                            // 1. The main message text
+                            Text(
+                              text,
+                              style: TextStyle(
+                                fontSize: 15,
+                                color: widget.isMe ? Colors.black87 : Colors.black,
+                              ),
                             ),
 
-                            // WhatsApp style timestamp + status inside bubble
-                            Positioned(
-                              bottom: 0,
-                              right: 0,
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  if (isEdited)
-                                    Padding(
-                                      padding:
-                                          const EdgeInsets.only(right: 4.0),
-                                      child: Text(
-                                        'Edited',
-                                        style: TextStyle(
-                                            fontSize: 10,
-                                            color: Colors.grey[600]),
-                                      ),
-                                    ),
-                                  Text(
-                                    formattedTime,
-                                    style: TextStyle(
-                                        fontSize: 10, color: Colors.grey[600]),
+                            // 2. A small horizontal spacer to separate text and time
+                            const SizedBox(width: 8),
+
+                            // 3. The Timestamp, 'Edited', and Status Row
+                            Row(
+                              mainAxisSize: MainAxisSize.min, // Takes only the space it needs
+                              children: [
+                                if (widget.message?.broadcastId != '' && !widget.isMe)
+                                  Padding(
+                                    padding: const EdgeInsets.only(right: 4.0),
+                                    child: Icon(Icons.campaign),
                                   ),
-                                  const SizedBox(width: 4),
-                                  if (widget.isMe)
-                                    Icon(
-                                      status == 'seen'
-                                          ? Icons.done_all
-                                          : Icons.done,
-                                      size: 16,
-                                      color: status == 'seen'
-                                          ? Colors.blue
-                                          : Colors.grey[600],
+                                if (isEdited)
+                                  Padding(
+                                    padding: const EdgeInsets.only(right: 4.0),
+                                    child: Text(
+                                      'Edited',
+                                      style: TextStyle(fontSize: 10, color: Colors.grey[600]),
                                     ),
-                                ],
-                              ),
+                                  ),
+                                Text(
+                                  formattedTime,
+                                  style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                                ),
+                                const SizedBox(width: 4),
+
+                                // 4. --- UPDATED STATUS LOGIC ---
+                                // This now handles SENT, DELIVERED, and SEEN
+                                if (widget.isMe)
+                                  Icon(
+                                    // Icon type:
+                                    // SENT = single tick
+                                    // DELIVERED or SEEN = double tick
+                                    status == 'sent'
+                                        ? Icons.done
+                                        : Icons.done_all,
+                                    size: 16,
+                                    // Icon color:
+                                    // SEEN = blue
+                                    // SENT or DELIVERED = grey
+                                    color: status == 'seen'
+                                        ? Colors.blue
+                                        : Colors.grey[600],
+                                  ),
+                              ],
                             ),
                           ],
                         ),
@@ -1628,7 +1571,7 @@ class _ChatBubbleState extends State<ChatBubble> {
           child: Wrap(
             children: [
               if (widget.isMe &&
-                  canEdit &&
+                  // canEdit &&
                   (widget.message?.messageType == 'text'))
                 ListTile(
                   leading: const Icon(Icons.edit),
@@ -1639,7 +1582,7 @@ class _ChatBubbleState extends State<ChatBubble> {
                         widget.message!); // Set message for editing
                   },
                 ),
-              if (widget.isMe && canDelete)
+              // if (widget.isMe && canDelete)
                 ListTile(
                   leading: const Icon(Icons.delete),
                   title: const Text("Delete"),

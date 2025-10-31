@@ -7,6 +7,7 @@ import 'app/modules/notification/notification_controller.dart';
 import 'app/modules/notification/notification_service.dart';
 import 'app/routes/app_pages.dart';
 import 'app/routes/app_routes.dart';
+import 'app/screens/splash_screen.dart';
 import 'config/theme/theme_controller.dart';
 
 void main() async {
@@ -34,8 +35,16 @@ class OmHealthCareApp extends StatelessWidget {
           //   primarySwatch: Colors.teal,
           // ),
           theme: themeController.theme,
-          initialRoute: AppRoutes.login,
-          getPages: AppPages.pages,
+          // initialRoute: AppRoutes.login,
+          initialRoute: AppRoutes.splash,
+          getPages: [
+            ...AppPages.pages,
+            GetPage(
+              name: AppRoutes.splash,
+              page: () => const SplashScreen(),
+            ),
+          ],
+          // getPages: AppPages.pages,
         );
       }
     );

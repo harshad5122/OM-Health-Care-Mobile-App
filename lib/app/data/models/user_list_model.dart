@@ -22,6 +22,7 @@ class UserListModel {
   String? lastSeen;
   String? createdAt;
   String? updatedAt;
+  String? assignDoctor;
 
 
   UserListModel({
@@ -48,6 +49,7 @@ class UserListModel {
     this.lastSeen,
     this.createdAt,
     this.updatedAt,
+    this.assignDoctor,
   });
 
   factory UserListModel.fromJson(Map<String, dynamic> json) => UserListModel(
@@ -74,6 +76,7 @@ class UserListModel {
     lastSeen: json["last_seen"],
     createdAt: json["created_at"],
     updatedAt: json["updated_at"],
+    assignDoctor: json["assign_doctor"],
   );
 
   Map<String, dynamic> toJson() => {
@@ -100,5 +103,6 @@ class UserListModel {
     "last_seen": lastSeen,
     "created_at": createdAt,
     "updated_at": updatedAt,
+    "assign_doctor": assignDoctor,
   };
 }
