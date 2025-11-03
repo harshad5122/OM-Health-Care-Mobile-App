@@ -240,10 +240,11 @@ class LeaveController extends GetxController {
           _resetApplyLeaveForm();
           fetchLeaveRecords();
           // Get.back();
-          await Future.delayed(const Duration(milliseconds: 800));
-          if (Get.isOverlaysOpen == false) {
-            Get.back();
-          }
+          Get.back(closeOverlays: true);
+          // await Future.delayed(const Duration(milliseconds: 800));
+          // if (Get.isOverlaysOpen == false) {
+          //   Get.back();
+          // }
         } else {
           Get.snackbar('Error', createLeaveResponse.msg, );
         }
@@ -393,6 +394,9 @@ class LeaveController extends GetxController {
         _resetApplyLeaveForm();
         fetchLeaveRecords();
         isEditMode.value = false;
+
+        Get.back(closeOverlays: true);
+
       } else {
         Get.snackbar('Error', 'Failed to update leave. Status: ${response.statusCode}');
       }

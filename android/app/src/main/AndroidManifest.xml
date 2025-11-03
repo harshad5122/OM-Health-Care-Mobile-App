@@ -21,7 +21,7 @@
         tools:ignore="ScopedStorage" />
 
     <application
-        android:label="om_health_care_app"
+        android:label="Om Physio Care"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

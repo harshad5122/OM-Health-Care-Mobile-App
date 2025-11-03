@@ -82,6 +82,8 @@ class AppointmentController extends GetxController {
   final int appointmentsPageSize = 20;
   var appointmentsHasMore = true.obs;
 
+  final selectedStatus = ''.obs;
+
 
   String formatTimeForDisplay(String? time24Hour) {
     if (time24Hour == null || time24Hour.isEmpty) return '';
@@ -986,12 +988,17 @@ print('patient response:: ${response.body}');
         body: jsonEncode(body),
       );
       Get.back();
+      await Future.delayed(const Duration(milliseconds: 300));
       if (response.statusCode == 200) {
-        Get.snackbar("Success", "Appointment $status successfully");
+
+        Get.snackbar("Success", "Appointment $status successfully", snackPosition: SnackPosition.BOTTOM);
+
         await fetchPatientAppointments();
         editingStatuses.remove(appointmentId);
         // Refresh calendar view after status update
         fetchDataForMonth(selectedDate.value);
+
+        Get.rootDelegate.popRoute();
       } else {
         final errorData = jsonDecode(response.body);
         Get.snackbar("Error",
@@ -1231,7 +1238,8 @@ print('patient response:: ${response.body}');
       print('status code ==> ${response.statusCode}');
       if (response.statusCode == 200) {
         Get.snackbar('Success', 'Appointment booked successfully!');
-        Get.back();
+        // Get.back();
+        Get.rootDelegate.popRoute();
         print('success');
         // Refresh data for the current month after booking
         fetchDataForMonth(selectedDate.value);
@@ -1290,7 +1298,8 @@ print('patient response:: ${response.body}');
       print('status code ==> ${response.statusCode}');
       if (response.statusCode == 200) {
         Get.snackbar('Success', 'Appointment updated successfully!');
-        Get.back();
+        // Get.back();
+        Get.rootDelegate.popRoute();
         print('response body: ${response.body}');
         // Refresh data for the current month after updating
         fetchDataForMonth(selectedDate.value);

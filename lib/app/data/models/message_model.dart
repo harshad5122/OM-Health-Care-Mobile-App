@@ -106,10 +106,15 @@ class MessageModel {
       updatedAt: json["updated_at"] != null ? DateTime.tryParse(json["updated_at"]) ?? DateTime.now() : DateTime.now(),
       isDeleted: json["is_deleted"] ?? false,
       status: json["status"] ?? 1,
+      // replyToDetails: json['reply_to_details'] != null
+      //     ? MessageModel.fromJson(json['reply_to_details'])
+      //     : null,
       replyToDetails: json['reply_to_details'] != null
-          ? MessageModel.fromJson(json['reply_to_details'])
+          ? MessageModel.fromJson({
+        ...json['reply_to_details'],
+        'sender_details': json['sender_details'], // inherit if missing
+      })
           : null,
-
       isEdited: json["edited"] ?? false,
       isRead: json["is_read"] ?? false,
     );

@@ -568,11 +568,35 @@ class ChatController extends GetxController {
 
 
 
-  void _onMessageSeen(Map data) {
+  void _onMessageSeen(Map data) async{
     final index = messages.indexWhere((msg) => msg.messageId == data['_id']);
     if (index != -1) {
       messages[index].messageStatus = data['message_status'];
       messages.refresh();
+    }
+
+
+    final messageId = data['_id'];
+    if (messageId != null) {
+      try {
+        final token = await TokenStorage.getToken();
+        final response = await http.get(
+          Uri.parse('${ApiConstants.MARK_SEEN_NOTIFICATION}/$messageId'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+        );
+
+        final resData = jsonDecode(response.body);
+        if (response.statusCode == 200 && resData['success'] == 1) {
+          print("✅ Notification removed for seen message: $messageId");
+        } else {
+          print("⚠️ Failed to mark notification as read for $messageId");
+        }
+      } catch (e) {
+        print("❌ Error marking notification as read: $e");
+      }
     }
   }
 

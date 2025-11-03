@@ -420,14 +420,16 @@ class _PatientAppointmentsPageState extends State<PatientAppointmentsPage> {
   Future<void> _showUpdateBottomSheet(
       BuildContext context, AppointmentModel appointment) async {
 
-    String initialStatus = appointment.status ?? 'CONFIRMED';
+
+    // String initialStatus = appointment.status ?? 'CONFIRMED';
+    controller.selectedStatus.value = appointment.status ?? 'CONFIRMED';
     // Use a map for status display for better color/styling later
     final statusOptions = ['CONFIRMED', 'CANCELLED', 'COMPLETED'];
 
     await Get.bottomSheet(
       StatefulBuilder(
         builder: (context, setState) {
-          String selectedStatus = initialStatus;
+          // String selectedStatus = initialStatus;
 
           // Custom Widget for a clean single info block
           Widget _buildInfoBlock(String label, String value) {
@@ -531,35 +533,44 @@ class _PatientAppointmentsPageState extends State<PatientAppointmentsPage> {
                 ),
                 const SizedBox(height: 8),
 
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade300, width: 1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: selectedStatus,
-                      isExpanded: true,
-                      icon: Icon(Icons.keyboard_arrow_down, color: Get.theme.primaryColor),
-                      items: statusOptions
-                          .map((status) => DropdownMenuItem(
-                        value: status,
-                        child: Text(
-                          status,
-                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                Obx(() {
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.shade300, width: 1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          // value: selectedStatus,
+                          value: controller.selectedStatus.value,
+                          isExpanded: true,
+                          icon: Icon(Icons.keyboard_arrow_down, color: Get.theme.primaryColor),
+                          items: statusOptions
+                              .map((status) => DropdownMenuItem(
+                            value: status,
+                            child: Text(
+                              status,
+                              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                            ),
+                          ))
+                              .toList(),
+                          onChanged: (value) {
+                            if (value != null) {
+                              controller.selectedStatus.value = value;
+                            }
+                          },
+                          // onChanged: (value) {
+                          //   if (value != null) {
+                          //     setState(() {
+                          //       selectedStatus = value;
+                          //     });
+                          //   }
+                          // },
                         ),
-                      ))
-                          .toList(),
-                      onChanged: (value) {
-                        if (value != null) {
-                          setState(() {
-                            selectedStatus = value;
-                          });
-                        }
-                      },
-                    ),
-                  ),
+                      ),
+                    );
+                  }
                 ),
 
                 const SizedBox(height: 24),
@@ -590,11 +601,20 @@ class _PatientAppointmentsPageState extends State<PatientAppointmentsPage> {
                       Expanded(
                         child: ElevatedButton(
                           onPressed: () async {
-                            if (selectedStatus != initialStatus) {
+                            // if (selectedStatus != initialStatus) {
+                            //   await controller.updateAppointmentStatus(
+                            //       appointment.id!, selectedStatus, appointment.patientId ?? '', Global.userId??'');
+                            // }
+                            if (controller.selectedStatus.value !=
+                                (appointment.status ?? 'CONFIRMED')) {
                               await controller.updateAppointmentStatus(
-                                  appointment.id!, selectedStatus, appointment.patientId ?? '', Global.userId??'');
+                                appointment.id!,
+                                controller.selectedStatus.value,
+                                appointment.patientId ?? '',
+                                Global.userId ?? '',
+                              );
                             }
-                            Get.back(); // Dismiss the bottom sheet
+                            // Get.back();
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Get.theme.primaryColor,

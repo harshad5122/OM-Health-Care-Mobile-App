@@ -1,5 +1,5 @@
 class ApiConstants {
-  static const String BASE_URL =  "https://9545738b300e.ngrok-free.app/api";
+  static const String BASE_URL =  "https://12dbde6422fe.ngrok-free.app/api";
   // static const String BASE_URL =  "https://om-health-care-backend.onrender.com/api";
 
   // AUTH ROUTES
