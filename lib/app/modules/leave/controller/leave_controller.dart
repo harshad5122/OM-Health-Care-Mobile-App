@@ -365,7 +365,7 @@ class LeaveController extends GetxController {
       return;
     }
 
-    bool hasConflict = await _isLeaveConflict(startDate.value!, endDate.value!, selectedLeaveType.value);
+    bool hasConflict = await _isLeaveConflict(startDate.value!, endDate.value!, selectedLeaveType.value, excludeLeaveId: leaveId);
     if (hasConflict) {
       Get.snackbar('Error', 'Another leave already exists on this date and leave type.');
       return;
@@ -442,7 +442,9 @@ class LeaveController extends GetxController {
     selectedStatus.value = record.status; // populate status
   }
 
-  Future<bool> _isLeaveConflict(DateTime start, DateTime end, String leaveType) async {
+  Future<bool> _isLeaveConflict(DateTime start, DateTime end, String leaveType, {
+    String? excludeLeaveId,
+  }) async {
     try {
       final token = await TokenStorage.getToken();
       final staffIdForRequest = Global.staffId;
@@ -459,6 +461,8 @@ class LeaveController extends GetxController {
         final leaveModel = leaveModelFromJson(response.body);
         if (leaveModel.success == 1) {
           for (final leave in leaveModel.body) {
+
+            if (excludeLeaveId != null && leave.id == excludeLeaveId) continue;
             // Skip cancelled or rejected leaves if your API returns them
             if (leave.status.toUpperCase() == 'REJECTED' ||
                 leave.status.toUpperCase() == 'CANCELLED') continue;

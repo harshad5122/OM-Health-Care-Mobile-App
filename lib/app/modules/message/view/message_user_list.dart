@@ -349,33 +349,4 @@ class _MessageUserListState extends State<MessageUserList>
     );
   }
 
-  // Widget buildBroadcastList(List<BroadcastModel> broadcasts) {
-  //   if (broadcasts.isEmpty) {
-  //     return const Center(child: Text("No broadcasts yet"));
-  //   }
-  //   return ListView.builder(
-  //     itemCount: broadcasts.length,
-  //     itemBuilder: (context, index) {
-  //       final bc = broadcasts[index];
-  //       return ListTile(
-  //         title: Text(bc.title),
-  //         subtitle: Text(
-  //           bc.lastMessage.isNotEmpty
-  //               ? bc.lastMessage
-  //               : "${bc.recipients.length} recipients",
-  //           maxLines: 1,
-  //           overflow: TextOverflow.ellipsis,
-  //         ),
-  //         onTap: () {
-  //           Get.toNamed(AppRoutes.chat, arguments: {
-  //             'receiverId': bc.id,
-  //             'name': bc.title,
-  //             'isBroadcast': true, // to handle UI differently
-  //           });
-  //         },
-  //       );
-  //     },
-  //   );
-  // }
-
 }

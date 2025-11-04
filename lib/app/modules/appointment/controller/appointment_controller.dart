@@ -993,7 +993,7 @@ print('patient response:: ${response.body}');
 
         Get.snackbar("Success", "Appointment $status successfully", snackPosition: SnackPosition.BOTTOM);
 
-        await fetchPatientAppointments();
+        await fetchPatientAppointments(clear: true);
         editingStatuses.remove(appointmentId);
         // Refresh calendar view after status update
         fetchDataForMonth(selectedDate.value);
@@ -1047,7 +1047,7 @@ print('patient response:: ${response.body}');
         final data = jsonDecode(response.body);
         if (data["success"] == 1) {
           Get.snackbar("Success", "Patient status updated successfully");
-          await fetchPatients();
+          await fetchPatients(clear: true);
         } else {
           Get.snackbar("Error", data["msg"] ?? "Failed to update");
         }

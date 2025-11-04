@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:om_health_care_app/app/utils/api_constants.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import '../data/models/message_model.dart';
 
@@ -8,7 +9,7 @@ class SocketService extends GetxService {
   final RxBool isConnected = false.obs;
 
   Future<void> connectSocket(String userId) async {
-    socket = IO.io('https://12dbde6422fe.ngrok-free.app', <String, dynamic>{
+    socket = IO.io(ApiConstants.ROOT_URL, <String, dynamic>{
       'transports': ['websocket'],
       'autoConnect': false,
     });

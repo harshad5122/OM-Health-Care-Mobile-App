@@ -34,7 +34,8 @@ class DateSelectorController extends GetxController {
     dateRanges.assignAll([
       {
         'label': 'This month',
-        'range': '${_formatDate(DateTime(now.year, now.month, 1))} - ${_formatDate(now)}',
+        // 'range': '${_formatDate(DateTime(now.year, now.month, 1))} - ${_formatDate(now)}',
+        'range': '${_formatDate(DateTime(now.year, now.month, 1))} - ${_formatDate(DateTime(now.year, now.month + 1, 0))}',
         'option': DateRangeOption.thisMonth.name,
       },
       {
@@ -44,7 +45,8 @@ class DateSelectorController extends GetxController {
       },
       {
         'label': 'This week',
-        'range': '${_formatDate(thisWeekStart)} - ${_formatDate(now)}',
+        // 'range': '${_formatDate(thisWeekStart)} - ${_formatDate(now)}',
+        'range': '${_formatDate(thisWeekStart)} - ${_formatDate(thisWeekStart.add(const Duration(days: 6)))}',
         'option': DateRangeOption.thisWeek.name,
       },
       {
@@ -75,13 +77,15 @@ class DateSelectorController extends GetxController {
     switch (label) {
       case 'This week':
         from = now.subtract(Duration(days: now.weekday - 1));
-        to = now;
+        // to = now;
+        to = from.add(const Duration(days: 6));
         option = DateRangeOption.thisWeek;
         break;
     // Removed 'Last Month' case from here, as you only want 'Last month' and 'Last week' is removed
       case 'This month':
         from = DateTime(now.year, now.month, 1);
-        to = now;
+        // to = now;
+        to = DateTime(now.year, now.month + 1, 0);
         option = DateRangeOption.thisMonth;
         break;
       case 'Last month':

@@ -82,24 +82,6 @@ class _SplashScreenState extends State<SplashScreen>
             ),
           ),
 
-          // Bottom tagline
-          // Positioned(
-          //   bottom: 30,
-          //   left: 0,
-          //   right: 0,
-          //   child: FadeTransition(
-          //     opacity: _fadeInAnimation,
-          //     child: const Text(
-          //       'Healing through movement ✨',
-          //       textAlign: TextAlign.center,
-          //       style: TextStyle(
-          //         fontSize: 14,
-          //         color: Colors.teal,
-          //         fontStyle: FontStyle.italic,
-          //       ),
-          //     ),
-          //   ),
-          // ),
         ],
       ),
     );

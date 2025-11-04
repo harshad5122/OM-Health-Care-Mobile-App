@@ -151,21 +151,7 @@ class _CreateBroadcastPageState extends State<CreateBroadcastPage>
               ids,
             );
           }
-          // socketService.createBroadcast(
-          //   Global.userId!,
-          //   titleController.text,
-          //   selectedUsers.map((u) => u.id!).toList(),
-          // );
-          // // Get.back(); // return to list
-          // socketService.socket?.on("broadcast_created", (data) {
-          //   print("Broadcast created: $data");
-          //   Get.back();
-          // });
-          //
-          // socketService.socket?.on("error", (err) {
-          //   print("Broadcast error: $err");
-          //   Get.snackbar("Error", err['message'] ?? "Failed to create broadcast");
-          // });
+
         },
       )),
     );

@@ -394,40 +394,6 @@ class MembersController extends GetxController {
     }
   }
 
-  // void deleteUser(UserListModel user) {
-  //   Get.defaultDialog(
-  //     title: 'Delete User',
-  //     middleText: 'Are you sure you want to delete ${user.firstname} ${user.lastname}?',
-  //     textConfirm: 'Delete',
-  //     textCancel: 'Cancel',
-  //     confirmTextColor: Colors.white,
-  //     onConfirm: () async {
-  //       // Implement actual delete logic
-  //       Get.back(); // Close dialog
-  //       try {
-  //         final token = await TokenStorage.getToken();
-  //         final uri = Uri.parse("${ApiConstants.DELET_USER}/${user.id}");
-  //         final response = await http.delete(uri, headers: {
-  //           'Authorization': 'Bearer $token',
-  //           'Content-Type': 'application/json',
-  //         });
-  //
-  //         final data = jsonDecode(response.body);
-  //         if (response.statusCode == 200 && data['success'] == 1) {
-  //           Get.snackbar('Success', data['msg'] ?? 'User deleted');
-  //           fetchUsers(clear: true);
-  //         } else {
-  //           Get.snackbar('Error', data['msg'] ?? 'Failed to delete user');
-  //         }
-  //       } catch (e) {
-  //         Get.snackbar('Exception', e.toString());
-  //       }
-  //       // Get.snackbar('Deleted', '${user.firstname} ${user.lastname} deleted');
-  //       fetchUsers(clear: true); // Refresh list
-  //     },
-  //   );
-  // }
-
   void deleteUser(UserListModel user) {
     CustomConfirmDialog.show(
       title: 'Delete User',

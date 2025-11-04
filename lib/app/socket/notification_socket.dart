@@ -1,5 +1,6 @@
 // lib/services/socket_service.dart
 import 'package:get/get.dart';
+import 'package:om_health_care_app/app/utils/api_constants.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 class SocketService extends GetxService {
@@ -11,7 +12,7 @@ class SocketService extends GetxService {
   Future<SocketService> init() async {
     // Initialize socket connection
    socket = IO.io(
-      'https://12dbde6422fe.ngrok-free.app',
+      ApiConstants.ROOT_URL,
       IO.OptionBuilder()
           .setTransports(['websocket'])
           .enableAutoConnect()

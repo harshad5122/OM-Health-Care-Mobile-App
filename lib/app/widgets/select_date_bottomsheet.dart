@@ -141,7 +141,8 @@ class SelectDateBottomSheet extends StatelessWidget {
                 dateSelectorController.customEndDate.value,   // Use custom dates
               ),
               minDate: DateTime(2000),
-              maxDate: DateTime.now(), // Max date should probably be today or a future date for appointments
+              // maxDate: DateTime.now(),
+              maxDate: DateTime(2100),
               monthCellStyle: const DateRangePickerMonthCellStyle(
                 todayTextStyle: TextStyle(color: Colors.black),
                 blackoutDateTextStyle: TextStyle(

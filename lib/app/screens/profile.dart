@@ -15,23 +15,61 @@ class ProfilePage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Profile"),
+        title: Obx(() => Text(
+          controller.isEditing.value ? "Edit Profile" : "Profile",
+        )),
         actions: [
-          Obx(() => TextButton(
-            // onPressed: controller.toggleEdit,
-            onPressed: () {
-              if (controller.isEditing.value) {
-                controller.updateUserProfile(); // call API on save
-              } else {
-                controller.toggleEdit();
-              }
-            },
-            child: Text(
-              controller.isEditing.value ? "Save" : "Edit Profile",
-              style: const TextStyle(color: Colors.white),
-            ),
-          )),
+          Obx(() {
+            if (controller.isEditing.value) {
+              // When editing → show Cancel + Save buttons
+              return Row(
+                children: [
+                  TextButton(
+                    onPressed: () {
+                      controller.toggleEdit(); // simply exit edit mode
+                    },
+                    child: const Text(
+                      "Cancel",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: controller.updateUserProfile,
+                    child: const Text(
+                      "Save",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ],
+              );
+            } else {
+              // When not editing → show Edit Profile button
+              return TextButton(
+                onPressed: controller.toggleEdit,
+                child: const Text(
+                  "Edit Profile",
+                  style: TextStyle(color: Colors.white),
+                ),
+              );
+            }
+          }),
         ],
+        // actions: [
+        //   Obx(() => TextButton(
+        //     // onPressed: controller.toggleEdit,
+        //     onPressed: () {
+        //       if (controller.isEditing.value) {
+        //         controller.updateUserProfile(); // call API on save
+        //       } else {
+        //         controller.toggleEdit();
+        //       }
+        //     },
+        //     child: Text(
+        //       controller.isEditing.value ? "Save" : "Edit Profile",
+        //       style: const TextStyle(color: Colors.white),
+        //     ),
+        //   )),
+        // ],
       ),
       drawer: CustomDrawer(),
       body: Obx(() {

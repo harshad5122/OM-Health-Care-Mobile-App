@@ -1,6 +1,8 @@
 class ApiConstants {
-  static const String BASE_URL =  "https://12dbde6422fe.ngrok-free.app/api";
-  // static const String BASE_URL =  "https://om-health-care-backend.onrender.com/api";
+  static const String ROOT_URL =  "https://f63550ff6af9.ngrok-free.app";
+  // static const String ROOT_URL =  "https://om-health-care-backend.onrender.com";
+  static const String BASE_URL =  "$ROOT_URL/api";
+
 
   // AUTH ROUTES
   static const String SIGNUP = "$BASE_URL/auth/signup";
@@ -23,7 +25,6 @@ class ApiConstants {
   static const String GET_DOCTOR_BY_ID = "$BASE_URL/get/doctor";
   static const String EDIT_DOCTOR = "$BASE_URL/edit/doctor";
   static const String DELETE_DOCTOR = "$BASE_URL/delete/doctor";
-
 
   // MESSAGE ROUTES
   static const String GET_MESSAGE_LIST = "$BASE_URL/message/list";
